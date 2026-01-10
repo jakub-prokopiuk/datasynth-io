@@ -3,13 +3,13 @@ Rynek narzędzi do generowania danych syntetycznych jest obecnie dynamicznie roz
 
 \section{Rozwiązania algorytmiczne i quasi-losowe}
 Jeszcze do niedawna były to najpopularniejsze narzędzia do generowania danych syntetycznych. Sztandarowe narzędzia w tej kategorii to m.in.:
-\subsection{Biblioteka Faker}
+\subsection*{Biblioteka Faker}
 Faker \cite{fakerjs} to biblioteka open-source dostępna w wielu językach programowania (Python, JavaScript, Ruby), umożliwiająca generowanie różnorodnych danych losowych, takich jak imiona, adresy, numery telefonów czy dane finansowe.
 \begin{itemize}
     \item \textbf{Zalety:} Bardzo wysoka wydajność (generowanie odbywa się w czasie rzeczywistym), brak kosztów (narzędzie jest open-source), determinizm (możliwość odtworzenia danych przy użyciu seed).
     \item \textbf{Wady:} Brak kontekstualnej spójności między generowanymi danymi. Wygenerowana ''recenzja produktu,, to zazwyczaj zlepek losowych słów z łaciny lub zdań niemających sensu logicznego. Znaczącą wadą jest również brak wbudowanej obsługi złożonych relacji między tabelami (użytkownik musi sam zaprogramować logikę kluczy obcych).
 \end{itemize}
-\subsection{Mockaroo}
+\subsection*{Mockaroo}
 Mockaroo to popularne narzędzie webowe (SaaS), które pozwala definiować schematy danych w GUI i pobierać je jako CSV/SQL/JSON.
 \begin{itemize}
     \item \textbf{Zalety:} Intuicyjny interfejs użytkownika, szeroki zakres typów danych, możliwość eksportu do różnych formatów, wsparcie dla relacji między tabelami za pomocą prostych skryptów pisanych w Ruby.
