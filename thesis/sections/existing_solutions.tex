@@ -1,0 +1,38 @@
+\chapter{Istniejące rozwiązania}
+Rynek narzędzi do generowania danych syntetycznych jest obecnie dynamicznie rozwijającym się obszarem, który można podzielić na trzy główne kategorie: rozwiązania algorytmiczne, rozwiązania oparte na uczeniu maszynowym oraz nowo powstające rozwiązania oparte o modele językowe (LLM). Poniższa analiza przedstawia wiodące narzędzia w tych kategoriach, wskazując ich zalety oraz ograniczenia w kontekście generowania spójnych relacyjnie baz danych.
+
+\section{Rozwiązania algorytmiczne i quasi-losowe}
+Jeszcze do niedawna były to najpopularniejsze narzędzia do generowania danych syntetycznych. Sztandarowe narzędzia w tej kategorii to m.in.:
+\subsection{Biblioteka Faker}
+Faker \cite{fakerjs} to biblioteka open-source dostępna w wielu językach programowania (Python, JavaScript, Ruby), umożliwiająca generowanie różnorodnych danych losowych, takich jak imiona, adresy, numery telefonów czy dane finansowe.
+\begin{itemize}
+    \item \textbf{Zalety:} Bardzo wysoka wydajność (generowanie odbywa się w czasie rzeczywistym), brak kosztów (narzędzie jest open-source), determinizm (możliwość odtworzenia danych przy użyciu seed).
+    \item \textbf{Wady:} Brak kontekstualnej spójności między generowanymi danymi. Wygenerowana ''recenzja produktu,, to zazwyczaj zlepek losowych słów z łaciny lub zdań niemających sensu logicznego. Znaczącą wadą jest również brak wbudowanej obsługi złożonych relacji między tabelami (użytkownik musi sam zaprogramować logikę kluczy obcych).
+\end{itemize}
+\subsection{Mockaroo}
+Mockaroo to popularne narzędzie webowe (SaaS), które pozwala definiować schematy danych w GUI i pobierać je jako CSV/SQL/JSON.
+\begin{itemize}
+    \item \textbf{Zalety:} Intuicyjny interfejs użytkownika, szeroki zakres typów danych, możliwość eksportu do różnych formatów, wsparcie dla relacji między tabelami za pomocą prostych skryptów pisanych w Ruby.
+    \item \textbf{Wady:} W wersji darmowej generowanie limitowane jest do 1000 wierszy. Mimo zaawansowania, nadal opiera się głównie na losowaniu ze słowników. Funkcje sztucznej inteligencji są ograniczone lub dodatkowo płatne.
+\end{itemize}
+\section{Rozwiązania oparte na modelach generatywnych}
+Ta grupa narzędzi (np. Gretel.ai \cite{gretel_platform}, Mostly AI \cite{mostly}) posiada duże problemy z prywatnością danych. Działają one na zasadzie: ''Wgraj nam swoją prawdziwą bazę danych, a my nauczymy model jej schematu i wygenerujemy nową, która wygląda tak samo, ale nie zawiera danych osobowych,,.
+\begin{itemize}
+    \item \textbf{Zalety:} Potrafią generować dane o wysokim stopniu realizmu, zachowując statystyczne właściwości oryginalnego zbioru.
+    \item \textbf{Wady:} Wymagają dostępu do rzeczywistych danych, co może naruszać przepisy o ochronie danych osobowych. Wymagają również danych wejściowych przez co nie nadają się do tworzenia danych do nowo powstających systemów, gdzie nie ma jeszcze żadnej bazy danych, na której można by uczyć model. Koszty licencyjne są wysokie, a skalowalność ograniczona przez infrastrukturę dostawcy.
+\end{itemize}
+\section{Rozwiązania oparte na modelach językowych}
+Najnowsza kategoria narzędzi do generowania danych syntetycznych wykorzystuje możliwości Dużych Modeli Językowych, takich jak GPT-4 czy Claude. Przykładowo, możemy poprosić model o wygenerowanie danych do tabeli ''Recenzje Produktów,,, podając mu kontekst (np. kategorie produktów, cechy użytkowników).
+\begin{itemize}
+    \item \textbf{Zalety:} Wysoki realizm tekstowy, kreatywność, rozumienie kontekstu.
+    \item \textbf{Wady:} Wysokie koszty operacyjne, ograniczenia szybkości, model może wymyślić nieistniejące ID lub zgubić strukturę JSON/SQL przy dużej ilości danych. Przez ograniczenia kontekstowe, generowanie dużych zbiorów danych wymaga podziału na mniejsze partie, co komplikuje zachowanie spójności referencyjnej między tabelami.
+\end{itemize}
+\section{Proponowane rozwiązanie}
+Analiza powyższych rozwiązań wskazuje na istotną lukę rynkową. Brakuje narzędzia, które:
+\begin{itemize}
+    \item nie wymaga danych wejściowych,
+    \item zapewnia wysoki realizm i kontekstowość danych tekstowych,
+    \item gwarantuje ścisłą integralność relacyjną przy dużej skali,
+    \item jest efektywne kosztowo (nie generuje prostych danych typu ''data urodzenia,, przez drogie LLM).
+\end{itemize}
+
