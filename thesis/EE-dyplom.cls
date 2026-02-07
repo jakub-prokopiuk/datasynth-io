@@ -74,7 +74,7 @@
 % -------------------------------------------------------------------
 \RequirePackage[acronym,symbols,nopostdot]{glossaries}
 \setglossarysection{section}
-\makeglossaries
+\makenoidxglossaries
 \loadglsentries{glossary}
 \ifnum\strcmp{\locallang}{PL} = 0
     \newcommand{\acronymstitle}{Wykaz skrótów i symboli}
@@ -812,8 +812,8 @@
     \chapter*{\acronymstitle}
     \pagestyle{plain}
     \addcontentsline{toc}{chapter}{\acronymstitle}
-    \printglossary[type=\acronymtype,title={}]
-    \printglossary[type=symbols,title={}]
+    \printnoidxglossary[type=\acronymtype,title={}]
+    \printnoidxglossary[type=symbols,title={}]
     % Alternatywna lista symboli - do użycia tylko w Overleaf
     %\input{symbols}
 }   %

@@ -1,0 +1,76 @@
+\chapter{Podręcznik użytkownika}
+\label{cha:user_manual}
+
+Niniejszy rozdział stanowi praktyczny przewodnik po systemie DataSynth. Opisano w nim proces instalacji, konfiguracji oraz krok po kroku przedstawiono scenariusz wykorzystania aplikacji do wygenerowania przykładowego zbioru danych.
+
+\section{Wymagania systemowe i instalacja}
+Aplikacja została zaprojektowana jako rozwiązanie skonteneryzowane, co minimalizuje wymagania wstępne po stronie systemu operacyjnego hosta.
+
+\subsection*{Wymagania}
+\begin{itemize}
+    \item System operacyjny: Linux (zalecany Ubuntu 22.04+), Windows 10/11 (z \gls{WSL2}) lub macOS.
+    \item Docker Engine (wersja 24.0+) oraz Docker Compose.
+    \item Min. 4GB pamięci \gls{RAM} (8GB+ zalecane przy korzystaniu z lokalnych modeli \gls{LLM}).
+    \item Dostęp do internetu (w celu pobrania obrazów Docker oraz komunikacji z \gls{API} OpenAI).
+\end{itemize}
+
+\subsection*{Proces instalacji}
+\begin{enumerate}
+    \item Pobierz kod źródłowy aplikacji z repozytorium.
+    \item Utwórz w katalogu \texttt{backend} plik \texttt{.env} na podstawie dostarczonego szablonu \texttt{.env.example}. Uzupełnij klucz \gls{API} OpenAI (opcjonalnie, jeśli planujesz korzystać z modeli chmurowych).
+    \item Uruchom terminal w głównym katalogu projektu i wykonaj polecenie:
+          \begin{verbatim}
+    docker compose up -d --build
+    \end{verbatim}
+    \item Poczekaj, aż wszystkie kontenery (backend, frontend, db, redis, worker) zgłoszą status \texttt{healthy}.
+    \item Otwórz przeglądarkę internetową i przejdź pod adres \texttt{http://localhost:5173}.
+\end{enumerate}
+
+\section{Pierwsze kroki: logowanie i interfejs}
+Przy pierwszym uruchomieniu system automatycznie tworzy konto administratora (login: \texttt{admin}, hasło: \texttt{admin}). Po zalogowaniu zobaczysz ekran główny.
+
+\section{Poradnik: generowanie bazy danych ,,Przychodnia Lekarska''}
+W tym scenariuszu stworzymy zestaw danych dla systemu obsługi przychodni, składający się z pacjentów, lekarzy i wizyt.
+
+\subsection*{Krok 1: Tabela ,,Lekarze'' (Doctors)}
+\begin{enumerate}
+    \item Kliknij przycisk \textbf{,,Add Table''} i nazwij tabelę \texttt{doctors}. Ustaw liczbę wierszy na 10.
+    \item Dodaj pole \texttt{id} (typ: Faker, metoda: \texttt{uuid4}, Unique: TAK).
+    \item Dodaj pole \texttt{name} (typ: Faker, metoda: \texttt{name}).
+    \item Dodaj pole \texttt{specialization} (typ: Distribution). W opcjach wpisz: \texttt{["Kardiolog", "Pediatra", "Internista"]}, a w wagach: \texttt{[20, 30, 50]}.
+    \item Dodaj pole \texttt{bio} (typ: \gls{LLM}). Wpisz prompt: \emph{"Napisz krótką notkę biograficzną (max 2 zdania) dla lekarza o specjalizacji \{specialization\}."}.
+\end{enumerate}
+
+\subsection*{Krok 2: Tabela ,,Pacjenci'' (Patients)}
+\begin{enumerate}
+    \item Dodaj tabelę \texttt{patients}. Ustaw liczbę wierszy na 50.
+    \item Dodaj pola \texttt{id}, \texttt{first\_name}, \texttt{last\_name}, \texttt{email}, \texttt{phone} używając odpowiednich metod typu Faker.
+\end{enumerate}
+
+\subsection*{Krok 3: Tabela ,,Wizyty'' (Appointments)}
+\begin{enumerate}
+    \item Dodaj tabelę \texttt{appointments}. Ustaw liczbę wierszy na 200.
+    \item Dodaj pole \texttt{id}.
+    \item Dodaj pole \texttt{doctor\_id} (typ: Foreign Key). Wybierz tabelę \texttt{doctors} i kolumnę \texttt{id}.
+    \item Dodaj pole \texttt{patient\_id} (typ: Foreign Key). Wybierz tabelę \texttt{patients} i kolumnę \texttt{id}.
+    \item Dodaj pole \texttt{date} (typ: Timestamp). Ustaw zakres od \texttt{-1y} do \texttt{now}.
+    \item Dodaj pole \texttt{notes} (typ: \gls{LLM}). Prompt: \emph{"Wygeneruj notatkę medyczną z wizyty u lekarza. Pacjent zgłasza typowe objawy."}.
+\end{enumerate}
+
+\subsection*{Krok 4: Generowanie i eksport}
+\begin{enumerate}
+    \item Kliknij niebieski przycisk \textbf{,,Run Generation''}.
+    \item Obserwuj pasek postępu. Proces może chwilę potrwać ze względu na generowanie opisów przez \gls{LLM}.
+    \item Gdy generowanie się zakończy, sprawdź wyniki w tabeli podglądu. Zwróć uwagę, że \texttt{doctor\_id} i \texttt{patient\_id} zawsze odpowiadają istniejącym rekordom.
+    \item Kliknij \textbf{,,Download''} aby pobrać gotowy skrypt tworzący i zasilający bazę danych.
+\end{enumerate}
+
+\section{Zaawansowane funkcje}
+\subsection*{Szablony}
+Możesz tworzyć pola zależne od innych w tym samym wierszu. Na przykład, aby wygenerować adres email pasujący do imienia i nazwiska, użyj typu \texttt{Template} i wpisz:
+\texttt{\{\{ first\_letter(imie) \}\}.\{\{ slugify(nazwisko) \}\}@firma.com}.
+
+\subsection*{Bezpośredni zrzut do bazy}
+Jeśli posiadasz uruchomioną bazę danych (np. lokalny PostgreSQL na porcie 5432), możesz użyć przycisku \textbf{"Push to DB"}. Wprowadź adres połączeniowy, np.:
+\texttt{postgresql://user:pass@localhost:5432/mojabaza}.
+System automatycznie utworzy tabele i wstawi wygenerowane rekordy. Upewnij się, że baza docelowa jest pusta lub nie posiada konfliktów nazw tabel.

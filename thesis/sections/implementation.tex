@@ -3,8 +3,8 @@
 
 W niniejszym rozdziale przedstawiono szczegóły implementacyjne zrealizowanego systemu generatora danych syntetycznych. Opisano architekturę rozwiązania, zastosowane technologie oraz kluczowe komponenty zarówno po stronie serwera (backend), jak i klienta (frontend). Przedstawiono również sposób konfiguracji środowiska uruchomieniowego oraz proces wdrażania aplikacji przy użyciu konteneryzacji.
 
-\section{Architektura Systemu}
-System został zaprojektowany w architekturze klient-serwer, z wyraźnym podziałem na warstwę prezentacji (frontend) oraz warstwę logiki biznesowej i dostępu do danych (backend). Komunikacja między tymi warstwami odbywa się za pośrednictwem interfejsu REST API. Całość systemu została skonteneryzowana przy użyciu platformy Docker, co zapewnia łatwość wdrożenia i spójność środowiska uruchomieniowego. Poniżej przedstawiono schemat architektury systemu (Rysunek \ref{fig:architecture_diagram}).
+\section{Architektura systemu}
+System został zaprojektowany w architekturze klient-serwer, z wyraźnym podziałem na warstwę prezentacji (frontend) oraz warstwę logiki biznesowej i dostępu do danych (backend). Komunikacja między tymi warstwami odbywa się za pośrednictwem interfejsu \gls{REST} \gls{API}. Całość systemu została skonteneryzowana przy użyciu platformy Docker, co zapewnia łatwość wdrożenia i spójność środowiska uruchomieniowego. Poniżej przedstawiono schemat architektury systemu (Rysunek \ref{fig:architecture_diagram}).
 
 \begin{figure}[H]
     \centering
@@ -15,29 +15,29 @@ System został zaprojektowany w architekturze klient-serwer, z wyraźnym podzia�
 
 Główne elementy systemu to:
 \begin{itemize}
-    \item \textbf{Backend API}: Serwer aplikacji odpowiedzialny za logikę biznesową, autentykację użytkowników oraz zarządzanie procesem generowania danych.
+    \item \textbf{Backend \gls{API}}: Serwer aplikacji odpowiedzialny za logikę biznesową, autentykację użytkowników oraz zarządzanie procesem generowania danych.
     \item \textbf{Frontend}: Aplikacja internetowa umożliwiająca użytkownikom interakcję z systemem, definiowanie schematów danych oraz podgląd wyników.
     \item \textbf{Baza Danych Aplikacji (PostgreSQL)}: Przechowuje informacje o użytkownikach, projektach oraz historię zadań.
     \item \textbf{Kolejka Zadań (Redis)}: Pośredniczy w przekazywaniu zadań generowania danych do procesów roboczych (workerów), co pozwala na asynchroniczne przetwarzanie długotrwałych operacji.
     \item \textbf{Worker (Celery)}: Proces odpowiedzialny za właściwe generowanie danych na podstawie zdefiniowanych reguł.
-    \item \textbf{Ollama (LLM)}: Lokalny serwer modeli językowych, wykorzystywany do generowania danych wymagających kreatywności i kontekstu.
+    \item \textbf{Ollama (\gls{LLM})}: Lokalny serwer modeli językowych, wykorzystywany do generowania danych wymagających kreatywności i kontekstu.
 \end{itemize}
 
-\section{Implementacja Backendowa}
-Warstwa backendowa została zaimplementowana w języku Python, z wykorzystaniem frameworka FastAPI. Wybór ten podyktowany był wysoką wydajnością FastAPI, wbudowaną obsługą asynchroniczności oraz automatycznym generowaniem dokumentacji API (Swagger UI).
+\section{Implementacja backendowa}
+Warstwa backendowa została zaimplementowana w języku Python, z wykorzystaniem frameworka FastAPI. Wybór ten podyktowany był wysoką wydajnością FastAPI, wbudowaną obsługą asynchroniczności oraz automatycznym generowaniem dokumentacji \gls{API} (Swagger \gls{UI}).
 
-\subsection*{Struktura Projektu}
+\subsection*{Struktura projektu}
 Kod źródłowy backendu został podzielony na moduły zgodnie z zasadą pojedynczej odpowiedzialności:
 \begin{itemize}
-    \item \texttt{main.py}: Punkt wejścia aplikacji, konfiguracja serwera i definicja tras API.
-    \item \texttt{models.py}: Modele danych Pydantic służące do walidacji żądań i odpowiedzi API.
+    \item \texttt{main.py}: Punkt wejścia aplikacji, konfiguracja serwera i definicja tras \gls{API}.
+    \item \texttt{models.py}: Modele danych Pydantic służące do walidacji żądań i odpowiedzi \gls{API}.
     \item \texttt{database.py}: Konfiguracja połączenia z bazą danych przy użyciu biblioteki SQLAlchemy.
     \item \texttt{engine.py}: Główny silnik generowania danych.
     \item \texttt{tasks.py}: Definicje zadań asynchronicznych dla Celery.
     \item \texttt{auth.py}: Logika uwierzytelniania i autoryzacji (OAuth2, haszowanie haseł).
 \end{itemize}
 
-\subsection*{Silnik Generowania Danych (Data Engine)}
+\subsection*{Silnik generowania danych (Data Engine)}
 Sercem systemu jest klasa \texttt{DataEngine} znajdująca się w pliku \texttt{engine.py}. Odpowiada ona za interpretację schematu danych zdefiniowanego przez użytkownika i fizyczne wygenerowanie wartości dla poszczególnych pól.
 
 Kluczowym wyzwaniem implementacyjnym było obsłużenie zależności między tabelami (klucze obce). W tym celu zaimplementowano metodę \texttt{\_resolve\_generation\_order}, która analizuje graf zależności między tabelami i ustala poprawną kolejność generowania. Algorytm ten zapewnia, że dane do tabeli nadrzędnej są generowane przed danymi do tabeli podrzędnej.
@@ -52,24 +52,24 @@ Generowanie wartości dla poszczególnych pól realizowane jest przez dedykowane
     \item \texttt{\_generate\_faker\_value}: Wykorzystuje bibliotekę \texttt{Faker} do tworzenia realistycznych danych (imiona, adresy, emaile).
     \item \texttt{\_generate\_distribution\_value}: Losuje wartość z podanej listy opcji z uwzględnieniem rozkładu prawdopodobieństwa.
     \item \texttt{\_generate\_foreign\_key\_value}: Rozwiązuje relacje między tabelami, pobierając identyfikator z innej, wcześniej wygenerowanej tabeli.
-    \item \texttt{\_generate\_llm\_value}: Komunikuje się z modelem językowym (przez OpenAI API lub lokalną instancję Ollama) w celu wygenerowania danych kontekstowych.
+    \item \texttt{\_generate\_llm\_value}: Komunikuje się z modelem językowym (przez OpenAI \gls{API} lub lokalną instancję Ollama) w celu wygenerowania danych kontekstowych.
 \end{itemize}
 
-\subsection*{Przetwarzanie Asynchroniczne}
-Ze względu na potencjalnie długi czas generowania dużych zbiorów danych, proces ten został odseparowany od głównego wątku obsługi żądań HTTP. Wykorzystano w tym celu bibliotekę Celery oraz bazę Redis jako brokera wiadomości.
+\subsection*{Przetwarzanie asynchroniczne}
+Ze względu na potencjalnie długi czas generowania dużych zbiorów danych, proces ten został odseparowany od głównego wątku obsługi żądań \gls{HTTP}. Wykorzystano w tym celu bibliotekę Celery oraz bazę Redis jako brokera wiadomości.
 
-Użytkownik zlecając generowanie danych, wysyła żądanie do endpointu \texttt{/generate/async}. System tworzy nowe zadanie, zwraca identyfikator \texttt{job\_id} i kończy obsługę żądania HTTP. Właściwe generowanie odbywa się w tle przez proces Workera. Status zadania jest monitorowany przez klienta w czasie rzeczywistym za pomocą protokołu WebSocket (endpoint \texttt{/ws/jobs/\{job\_id\}}), co pozwala na wyświetlanie paska postępu.
+Użytkownik zlecając generowanie danych, wysyła żądanie do endpointu \texttt{/generate/async}. System tworzy nowe zadanie, zwraca identyfikator \texttt{job\_id} i kończy obsługę żądania \gls{HTTP}. Właściwe generowanie odbywa się w tle przez proces Workera. Status zadania jest monitorowany przez klienta w czasie rzeczywistym za pomocą protokołu WebSocket (endpoint \texttt{/ws/jobs/\{job\_id\}}), co pozwala na wyświetlanie paska postępu.
 
 \subsection*{Bezpieczeństwo}
-System implementuje mechanizm uwierzytelniania oparty na tokenach JWT (JSON Web Tokens). Hasła użytkowników są bezpiecznie przechowywane w bazie danych w formie zahaszowanej (przy użyciu algorytmu bcrypt). Każdy chroniony endpoint API weryfikuje ważność tokenu przed przetworzeniem żądania, co realizowane jest za pomocą mechanizmu \textit{Dependency Injection} w FastAPI.
+System implementuje mechanizm uwierzytelniania oparty na tokenach \gls{JWT} (\gls{JSON} Web Tokens). Hasła użytkowników są bezpiecznie przechowywane w bazie danych w formie zahaszowanej (przy użyciu algorytmu bcrypt). Każdy chroniony endpoint \gls{API} weryfikuje ważność tokenu przed przetworzeniem żądania, co realizowane jest za pomocą mechanizmu \textit{Dependency Injection} w FastAPI.
 
-\section{Implementacja Frontendowa}
-Warstwa prezentacji została zrealizowana jako aplikacja typu Single Page Application (SPA) przy użyciu biblioteki React. Do budowania projektu wykorzystano narzędzie Vite, a za stylowanie odpowiada framework Tailwind CSS.
+\section{Implementacja frontendowa}
+Warstwa prezentacji została zrealizowana jako aplikacja typu Single Page Application (\gls{SPA}) przy użyciu biblioteki React. Do budowania projektu wykorzystano narzędzie Vite, a za stylowanie odpowiada framework Tailwind \gls{CSS}.
 
 \subsection*{Szczegółowy opis interfejsu}
 W dalszej części tego rozdziału przedstawiono kluczowe elementy interfejsu graficznego aplikacji. Interfejs został zaprojektowany w sposób minimalistyczny, z wykorzystaniem ciemnego motywu (Dark Mode), aby zapewnić komfort pracy przy długotrwałym użytkowaniu. Aplikacja jest w języku angielskim, co jest standardem w narzędziach deweloperskich.
 
-\subsection*{Ekran Logowania}
+\subsection*{Ekran logowania}
 Dostęp do systemu jest chroniony i wymaga uwierzytelnienia.
 \begin{figure}[H]
     \centering
@@ -78,7 +78,7 @@ Dostęp do systemu jest chroniony i wymaga uwierzytelnienia.
     \label{fig:login_page}
 \end{figure}
 
-Na rysunku \ref{fig:login_page} przedstawiono widok logowania. Użytkownik musi podać nazwę użytkownika oraz hasło. System komunikuje się z API w celu weryfikacji poświadczeń i w przypadku sukcesu otrzymuje token JWT, który jest zapisywany w pamięci przeglądarki. Interfejs obsługuje również wyświetlanie komunikatów o błędach w przypadku niepoprawnych danych.
+Na rysunku \ref{fig:login_page} przedstawiono widok logowania. Użytkownik musi podać nazwę użytkownika oraz hasło. System komunikuje się z \gls{API} w celu weryfikacji poświadczeń i w przypadku sukcesu otrzymuje token \gls{JWT}, który jest zapisywany w pamięci przeglądarki. Interfejs obsługuje również wyświetlanie komunikatów o błędach w przypadku niepoprawnych danych.
 
 \subsection*{Główny widok aplikacji}
 Po zalogowaniu użytkownik dostaje dostęp do głównego widoku aplikacji, który stanowi centrum tworzenia schematu bazy danych. Interfejs został zaprojektowany z myślą o ergonomii, dzieląc ekran na dwie główne sekcje: lewy panel konfiguracyjny (budowanie schematu) oraz prawy panel wyników (podgląd i eksport).
@@ -97,7 +97,7 @@ W górnej części panelu znajduje się pasek narzędzi służący do zarządzan
 \begin{itemize}
     \item \textbf{Zarządzanie Projektami}: Przyciski umożliwiające zapisywanie i wczytywanie projektów z bazy danych.
     \item \textbf{Szablony (Templates)}: Dostęp do gotowych, predefiniowanych schematów danych.
-    \item \textbf{Import/Eksport}: Możliwość zapisania schematu do lokalnego pliku JSON oraz jego ponownego wczytania.
+    \item \textbf{Import/Eksport}: Możliwość zapisania schematu do lokalnego pliku \gls{JSON} oraz jego ponownego wczytania.
     \item \textbf{Wczytywanie przykładowych danych}: Opcja pozwalająca na szybkie załadowanie przykładowego schematu (np. ,,E-commerce''), co jest szczególnie przydatne dla nowych użytkowników.
 \end{itemize}
 
@@ -106,8 +106,8 @@ Poniżej paska narzędzi znajdują się parametry definiujące ogólne właściw
 \begin{itemize}
     \item \textbf{Nazwa Zbioru}: Pole tekstowe definiujące nazwę zadania, która później służy jako nazwa pliku wynikowego.
     \item \textbf{Lokalizacja (Locale)}: Rozwijana lista pozwalająca wybrać krąg kulturowy generowanych danych (np. \texttt{en\_US}, \texttt{pl\_PL}, \texttt{de\_DE}). Wybór ten wpływa na formatowanie dat, walut, numerów telefonów oraz język generowanych tekstów przez bibliotekę Faker.
-    \item \textbf{Format Wyjściowy}: Pozwala zdefiniować, w jakiej postaci mają zostać zwrócone dane (JSON, CSV spakowany w ZIP, plik SQL).
-    \item \textbf{Globalny Kontekst AI}: Pole tekstowe, w którym użytkownik może opisać ogólny charakter generowanych danych (np. ,,System medyczny dla szpitala wojewódzkiego''). Kontekst ten jest doklejany do promptów wysyłanych do modeli LLM, co pozwala na zachowanie spójności tematycznej wszystkich generowanych pól.
+    \item \textbf{Format Wyjściowy}: Pozwala zdefiniować, w jakiej postaci mają zostać zwrócone dane (\gls{JSON}, \gls{CSV} spakowany w ZIP, plik \gls{SQL}).
+    \item \textbf{Globalny Kontekst AI}: Pole tekstowe, w którym użytkownik może opisać ogólny charakter generowanych danych (np. ,,System medyczny dla szpitala wojewódzkiego''). Kontekst ten jest doklejany do promptów wysyłanych do modeli \gls{LLM}, co pozwala na zachowanie spójności tematycznej wszystkich generowanych pól.
 \end{itemize}
 
 \begin{figure}[H]
@@ -145,7 +145,7 @@ Kluczowym elementem interfejsu jest formularz dodawania nowych pól do tabeli.
 
 Moduł ten (Rysunek \ref{fig:schema_builder}) dynamicznie dostosowuje dostępne parametry w zależności od wybranego typu danych. Użytkownik może:
 \begin{itemize}
-    \item Wybrać typ generatora (np. Faker, AI/LLM, Integer, Foreign Key).
+    \item Wybrać typ generatora (np. Faker, AI/\gls{LLM}, Integer, Foreign Key).
     \item Skonfigurować parametry specyficzne (np. zakres liczb, prompt dla AI, tabelę docelową dla klucza obcego).
     \item Oznaczyć pole jako unikalne (Unique), co wymusi generowanie niepowtarzalnych wartości.
 \end{itemize}
@@ -177,7 +177,7 @@ Dolną część panelu zajmuje lista pól dla aktywnej tabeli. Każdy element li
     \label{fig:field_list}
 \end{figure}
 
-\subsection*{Generowanie i Eksport Danych}
+\subsection*{Generowanie i eksport danych}
 Proces generowania danych odbywa się asynchronicznie, a postęp jest wizualizowany za pomocą paska postępu.
 
 \begin{figure}[H]
@@ -189,9 +189,9 @@ Proces generowania danych odbywa się asynchronicznie, a postęp jest wizualizow
 
 Po zakończeniu procesu (Rysunek \ref{fig:generation_modal}), wyniki są prezentowane w panelu wyjściowym. Użytkownik ma wtedy możliwość:
 \begin{itemize}
-    \item Przejrzenia wygenerowanych danych w formacie tabeli, jak i w formacie JSON bezpośrednio w przeglądarce (wprowadzono ograniczenie do 100 wierszy, aby uniknąć problemów z wydajnością).
+    \item Przejrzenia wygenerowanych danych w formacie tabeli, jak i w formacie \gls{JSON} bezpośrednio w przeglądarce (wprowadzono ograniczenie do 100 wierszy, aby uniknąć problemów z wydajnością).
     \item Skopiowania widocznego fragmentu danych do schowka.
-    \item Pobrania danych jako plik JSON, SQL lub pakiet CSV.
+    \item Pobrania danych jako plik \gls{JSON}, \gls{SQL} lub pakiet \gls{CSV}.
     \item Bezpośredniego eksportu danych do zewnętrznej bazy danych (poprzez podanie parametrów połączenia).
 \end{itemize}
 
@@ -205,7 +205,7 @@ Po zakończeniu procesu (Rysunek \ref{fig:generation_modal}), wyniki są prezent
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{images/generated_data_json.png}
-    \caption{Wygenerowane dane w formacie JSON}
+    \caption{Wygenerowane dane w formacie \gls{JSON}}
     \label{fig:generated_data_json}
 \end{figure}
 
@@ -216,14 +216,14 @@ Po zakończeniu procesu (Rysunek \ref{fig:generation_modal}), wyniki są prezent
     \label{fig:push_to_database_modal}
 \end{figure}
 
-Na rysunkach \ref{fig:generated_data_table} oraz \ref{fig:generated_data_json} przedstawiono przykładowy widok wygenerowanych danych. Użytkownik może łatwo przełączać się między widokiem tabelarycznym a surowym JSON-em. Rysunek \ref{fig:push_to_database_modal} prezentuje formularz umożliwiający bezpośredni eksport danych do zewnętrznej bazy danych, co jest szczególnie przydatne dla deweloperów chcących szybko zasilić testową bazę danymi.
+Na rysunkach \ref{fig:generated_data_table} oraz \ref{fig:generated_data_json} przedstawiono przykładowy widok wygenerowanych danych. Użytkownik może łatwo przełączać się między widokiem tabelarycznym a surowym \gls{JSON}-em. Rysunek \ref{fig:push_to_database_modal} prezentuje formularz umożliwiający bezpośredni eksport danych do zewnętrznej bazy danych, co jest szczególnie przydatne dla deweloperów chcących szybko zasilić testową bazę danymi.
 
 
-\subsection*{Zarządzanie Stanem}
+\subsection*{Zarządzanie stanem}
 Stan aplikacji jest zarządzany głównie przy użyciu hooków React (\texttt{useState}, \texttt{useEffect}). Do obsługi złożonego stanu edytora schematu stworzono dedykowany hook \texttt{useSchema}, który centralizuje logikę dodawania, usuwania i edycji tabel oraz pól.
 
 \subsection*{Komunikacja z API}
-Do komunikacji z backendem wykorzystano bibliotekę \texttt{axios}. Zaimplementowano instancję klienta API (w pliku \texttt{api.js}), która automatycznie dołącza token autoryzacyjny do każdego żądania oraz obsługuje błędy odpowiedzi serwera (np. automatyczne wylogowanie po wygaśnięciu tokenu).
+Do komunikacji z backendem wykorzystano bibliotekę \texttt{axios}. Zaimplementowano instancję klienta \gls{API} (w pliku \texttt{api.js}), która automatycznie dołącza token autoryzacyjny do każdego żądania oraz obsługuje błędy odpowiedzi serwera (np. automatyczne wylogowanie po wygaśnięciu tokenu).
 
 \section{Implementacja algorytmów}
 
@@ -244,7 +244,7 @@ W systemie zaimplementowano wariant algorytmu Kahna. Proces przebiega w następu
 \end{enumerate}
 
 \subsection*{Integracja z LLM}
-Generowanie danych przy użyciu LLM odbywa się w metodzie \texttt{\_generate\_llm\_value}. Proces ten jest znacznie bardziej złożony niż proste wywołanie API.
+Generowanie danych przy użyciu \gls{LLM} odbywa się w metodzie \texttt{\_generate\_llm\_value}. Proces ten jest znacznie bardziej złożony niż proste wywołanie \gls{API}.
 
 \subsubsection*{Konstrukcja Promptu}
 Prompt wysyłany do modelu składa się z trzech części:
@@ -272,7 +272,7 @@ while attempts < 10:
 Wzrost temperatury w kolejnych próbach zwiększa ,,kreatywność'' modelu, zmniejszając szansę na wygenerowanie duplikatu.
 
 \section{WebSocket}
-Do wizualizacji postępu w czasie rzeczywistym wykorzystano protokół WebSocket. Po nawiązaniu połączenia pod adresem \texttt{ws://server:8001/ws/jobs/\{job\_id\}}, serwer cyklicznie przesyła ramki JSON o strukturze:
+Do wizualizacji postępu w czasie rzeczywistym wykorzystano protokół WebSocket. Po nawiązaniu połączenia pod adresem \texttt{ws://server:8001/ws/jobs/\{job\_id\}}, serwer cyklicznie przesyła ramki \gls{JSON} o strukturze:
 
 \begin{verbatim}
 {
@@ -295,7 +295,7 @@ Całe środowisko uruchomieniowe zostało zdefiniowane w pliku \texttt{docker-co
     \item \texttt{db}: Baza danych PostgreSQL dla aplikacji.
     \item \texttt{redis}: Broker wiadomości dla Celery.
     \item \texttt{target-db}: Dodatkowa instancja PostgreSQL, służąca jako przykładowa docelowa baza danych do bezpośredniego zasilania danymi.
-    \item \texttt{ollama}: Usługa serwująca modele LLM.
+    \item \texttt{ollama}: Usługa serwująca modele \gls{LLM}.
 \end{itemize}
 
 Dzięki takiemu podejściu, uruchomienie całego systemu sprowadza się do wykonania jednego polecenia \texttt{docker compose up}, co znacząco upraszcza proces instalacji i testowania rozwiązania.

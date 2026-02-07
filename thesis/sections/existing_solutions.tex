@@ -1,5 +1,5 @@
 \chapter{Istniejące rozwiązania}
-Rynek narzędzi do generowania danych syntetycznych jest obecnie dynamicznie rozwijającym się obszarem, który można podzielić na trzy główne kategorie: rozwiązania algorytmiczne, rozwiązania oparte na uczeniu maszynowym oraz nowo powstające rozwiązania oparte o modele językowe (LLM). Poniższa analiza przedstawia wiodące narzędzia w tych kategoriach, wskazując ich zalety oraz ograniczenia w kontekście generowania spójnych relacyjnie baz danych.
+Rynek narzędzi do generowania danych syntetycznych jest obecnie dynamicznie rozwijającym się obszarem, który można podzielić na trzy główne kategorie: rozwiązania algorytmiczne, rozwiązania oparte na uczeniu maszynowym oraz nowo powstające rozwiązania oparte o modele językowe (\gls{LLM}). Poniższa analiza przedstawia wiodące narzędzia w tych kategoriach, wskazując ich zalety oraz ograniczenia w kontekście generowania spójnych relacyjnie baz danych.
 
 \section{Rozwiązania algorytmiczne i quasi-losowe}
 Jeszcze do niedawna były to najpopularniejsze narzędzia do generowania danych syntetycznych. Sztandarowe narzędzia w tej kategorii to m.in.:
@@ -10,7 +10,7 @@ Faker \cite{fakerjs} to biblioteka open-source dostępna w wielu językach progr
     \item \textbf{Wady:} Brak kontekstualnej spójności między generowanymi danymi. Wygenerowana ''recenzja produktu,, to zazwyczaj zlepek losowych słów z łaciny lub zdań niemających sensu logicznego. Znaczącą wadą jest również brak wbudowanej obsługi złożonych relacji między tabelami (użytkownik musi sam zaprogramować logikę kluczy obcych).
 \end{itemize}
 \subsection*{Mockaroo}
-Mockaroo to popularne narzędzie webowe (SaaS), które pozwala definiować schematy danych w GUI i pobierać je jako CSV/SQL/JSON.
+Mockaroo to popularne narzędzie webowe (\gls{SaaS}), które pozwala definiować schematy danych w GUI i pobierać je jako \gls{CSV}/\gls{SQL}/\gls{JSON}.
 \begin{itemize}
     \item \textbf{Zalety:} Intuicyjny interfejs użytkownika, szeroki zakres typów danych, możliwość eksportu do różnych formatów, wsparcie dla relacji między tabelami za pomocą prostych skryptów pisanych w Ruby.
     \item \textbf{Wady:} W wersji darmowej generowanie limitowane jest do 1000 wierszy. Mimo zaawansowania, nadal opiera się głównie na losowaniu ze słowników. Funkcje sztucznej inteligencji są ograniczone lub dodatkowo płatne.
@@ -25,7 +25,7 @@ Ta grupa narzędzi (np. Gretel.ai \cite{gretel_platform}, Mostly AI \cite{mostly
 Najnowsza kategoria narzędzi do generowania danych syntetycznych wykorzystuje możliwości Dużych Modeli Językowych, takich jak GPT-4 czy Claude. Przykładowo, możemy poprosić model o wygenerowanie danych do tabeli ''Recenzje Produktów,,, podając mu kontekst (np. kategorie produktów, cechy użytkowników).
 \begin{itemize}
     \item \textbf{Zalety:} Wysoki realizm tekstowy, kreatywność, rozumienie kontekstu.
-    \item \textbf{Wady:} Wysokie koszty operacyjne, ograniczenia szybkości, model może wymyślić nieistniejące ID lub zgubić strukturę JSON/SQL przy dużej ilości danych. Przez ograniczenia kontekstowe, generowanie dużych zbiorów danych wymaga podziału na mniejsze partie, co komplikuje zachowanie spójności referencyjnej między tabelami.
+    \item \textbf{Wady:} Wysokie koszty operacyjne, ograniczenia szybkości, model może wymyślić nieistniejące ID lub zgubić strukturę \gls{JSON}/\gls{SQL} przy dużej ilości danych. Przez ograniczenia kontekstowe, generowanie dużych zbiorów danych wymaga podziału na mniejsze partie, co komplikuje zachowanie spójności referencyjnej między tabelami.
 \end{itemize}
 \section{Proponowane rozwiązanie}
 Analiza powyższych rozwiązań wskazuje na istotną lukę rynkową. Brakuje narzędzia, które:
@@ -33,6 +33,31 @@ Analiza powyższych rozwiązań wskazuje na istotną lukę rynkową. Brakuje nar
     \item nie wymaga danych wejściowych,
     \item zapewnia wysoki realizm i kontekstowość danych tekstowych,
     \item gwarantuje ścisłą integralność relacyjną przy dużej skali,
-    \item jest efektywne kosztowo (nie generuje prostych danych typu ''data urodzenia,, przez drogie LLM).
+    \item jest efektywne kosztowo (nie generuje prostych danych typu ''data urodzenia,, przez drogie \gls{LLM}).
 \end{itemize}
 
+\section{Porównanie rozwiązań}
+Poniższa tabela (Tabela \ref{tab:solutions_comparison}) przedstawia porównanie analizowanych narzędzi z rozwiązaniem autorskim.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|c|c|}
+        \hline
+        \textbf{Cecha}              & \textbf{Faker} & \textbf{Mockaroo} & \textbf{Gretel.ai} & \textbf{DataSynth} \\
+        \hline
+        Generowanie strukturalne    & TAK            & TAK               & TAK                & TAK                \\
+        \hline
+        Generowanie kontekstowe AI  & NIE            & Ograniczone       & TAK                & TAK                \\
+        \hline
+        Obsługa relacji (FK)        & Manualna       & Skryptowa         & Automatyczna       & Automatyczna       \\
+        \hline
+        Prywatność (Lokalne modele) & -              & NIE               & Częściowo          & TAK (Ollama)       \\
+        \hline
+        Wymaga danych wejściowych   & NIE            & NIE               & TAK                & NIE                \\
+        \hline
+        Koszt                       & Darmowy        & Freemium          & Płatny             & Darmowy            \\
+        \hline
+    \end{tabular}
+    \caption{Porównanie narzędzi do generowania danych}
+    \label{tab:solutions_comparison}
+\end{table}

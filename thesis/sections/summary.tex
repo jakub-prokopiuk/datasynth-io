@@ -1,12 +1,12 @@
-\chapter{Podsumowanie i Wnioski}
+\chapter{Podsumowanie i wnioski}
 \label{cha:summary}
 
-Celem niniejszej pracy magisterskiej było zaprojektowanie i zaimplementowanie nowoczesnego narzędzia do generowania syntetycznych danych relacyjnych, wspieranego przez modele sztucznej inteligencji. Cel ten został osiągnięty poprzez stworzenie kompletnej aplikacji webowej, która integruje szybkość tradycyjnych generatorów z kreatywnością modeli LLM.
+Celem niniejszej pracy magisterskiej było zaprojektowanie i zaimplementowanie nowoczesnego narzędzia do generowania syntetycznych danych relacyjnych, wspieranego przez modele sztucznej inteligencji. Cel ten został osiągnięty poprzez stworzenie kompletnej aplikacji webowej, która integruje szybkość tradycyjnych generatorów z kreatywnością modeli \gls{LLM}.
 
 \section{Osiągnięcia}
 W ramach prac zrealizowano wszystkie założone wymagania funkcjonalne i niefunkcjonalne:
 \begin{itemize}
-    \item \textbf{Hybrydowy Silnik Generujący}: Stworzono elastyczny mechanizm łączący bibliotekę Faker, szablony Jinja2 oraz modele LLM (OpenAI/Ollama). Pozwala to na generowanie danych o dowolnym stopniu skomplikowania – od prostych typów liczbowych po złożone opisy tekstowe.
+    \item \textbf{Hybrydowy Silnik Generujący}: Stworzono elastyczny mechanizm łączący bibliotekę Faker, szablony Jinja2 oraz modele \gls{LLM} (OpenAI/Ollama). Pozwala to na generowanie danych o dowolnym stopniu skomplikowania – od prostych typów liczbowych po złożone opisy tekstowe.
     \item \textbf{Obsługa Relacji}: Zaimplementowano algorytm automatycznego rozwiązywania zależności między tabelami, co gwarantuje spójność referencyjną generowanych zbiorów danych.
     \item \textbf{Wydajność}: Dzięki zastosowaniu architektury asynchronicznej (Celery + Redis), system jest w stanie obsłużyć generowanie tysięcy rekordów bez blokowania interfejsu użytkownika.
     \item \textbf{Konteneryzacja}: Całość rozwiązania została zamknięta w kontenerach Docker, co drastycznie upraszcza proces wdrożenia i konfiguracji w dowolnym środowisku.
@@ -18,7 +18,7 @@ Zrealizowany projekt stanowi solidną podstawę do dalszego rozwoju. Zidentyfiko
 \begin{enumerate}
     \item \textbf{Wsparcie dla kolejnych silników bazodanowych}: Obecnie system wspiera eksport do PostgreSQL. Rozszerzenie o natywne wsparcie dla MySQL, Oracle oraz baz NoSQL (np. MongoDB) zwiększyłoby uniwersalność narzędzia.
     \item \textbf{Generowanie na podstawie istniejącej bazy}: Ciekawą funkcjonalnością byłaby inżynieria wsteczna - podłączenie się do istniejącej bazy danych, automatyczne odczytanie jej schematu i wygenerowanie danych testowych ,,podobnych'' do danych produkcyjnych (z zachowaniem anonimizacji).
-    \item \textbf{Inteligentne wykrywanie typów}: Wykorzystanie LLM do automatycznej sugestii typów danych na podstawie samej nazwy kolumny (np. wpisując nazwę "pesel", system sam proponuje odpowiedni generator regex).
+    \item \textbf{Inteligentne wykrywanie typów}: Wykorzystanie \gls{LLM} do automatycznej sugestii typów danych na podstawie samej nazwy kolumny (np. wpisując nazwę "pesel", system sam proponuje odpowiedni generator regex).
 \end{enumerate}
 
 Podsumowując, stworzone narzędzie wypełnia lukę na rynku generatorów danych testowych, oferując unikalną możliwość generowania treści semantycznie poprawnych i kontekstowych, co jest kluczowe w dobie nowoczesnych aplikacji opartych na danych.

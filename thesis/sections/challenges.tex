@@ -1,4 +1,4 @@
-\chapter{Wyzwania i Problemy Implementacyjne}
+\chapter{Wyzwania i problemy implementacyjne}
 
 Realizacja systemu łączącego deterministyczne generowanie danych z probabilistyczną naturą modeli językowych wiązała się z szeregiem wyzwań technicznych. W tym rozdziale omówiono napotkane problemy oraz zastosowane rozwiązania.
 
@@ -6,7 +6,7 @@ Realizacja systemu łączącego deterministyczne generowanie danych z probabilis
 Jednym z głównych wyzwań było zapewnienie spójności informacji o postępie generowania danych między backendem (Celery worker) a frontendem.
 
 \subsection*{Problem}
-Protokół HTTP jest bezstanowy, co utrudnia przesyłanie informacji o postępie (np. ,,45\% wykonano'') w czasie rzeczywistym. Początkowo rozważano technikę \textit{Long Polling}, jednak przy dużej liczbie jednoczesnych użytkowników generowałoby to nadmiarowy ruch sieciowy.
+Protokół \gls{HTTP} jest bezstanowy, co utrudnia przesyłanie informacji o postępie (np. ,,45\% wykonano'') w czasie rzeczywistym. Początkowo rozważano technikę \textit{Long Polling}, jednak przy dużej liczbie jednoczesnych użytkowników generowałoby to nadmiarowy ruch sieciowy.
 
 \subsection*{Rozwiązanie}
 Zdecydowano się na implementację protokołu WebSocket. Backend uruchamia dedykowany endpoint \texttt{/ws/jobs/\{job\_id\}}, który nasłuchuje zdarzeń od menedżera zadań (\texttt{job\_manager.py}). Worker zapisuje postęp w pamięci współdzielonej (zmienna globalna w instancji serwera lub Redis), a wątek WebSocket cyklicznie (co 0.5s) odczytuje ten stan i wypycha go do klienta. Dzięki temu interfejs użytkownika jest płynny i responsywny.
@@ -21,7 +21,7 @@ Podczas testów zauważono, że przy wysokiej temperaturze (parametr \texttt{tem
 W klasie \texttt{DataEngine} zaimplementowano hybrydowy mechanizm kontroli unikalności:
 \begin{enumerate}
     \item System utrzymuje zbiór wygenerowanych wartości dla każdego pola oznaczonego jako \texttt{UNIQUE}.
-    \item Przy każdej próbie wygenerowania wartości przez LLM, sprawdzane jest, czy wartość już istnieje.
+    \item Przy każdej próbie wygenerowania wartości przez \gls{LLM}, sprawdzane jest, czy wartość już istnieje.
     \item W przypadku kolizji, system ponawia próbę (do 10 razy), dynamicznie modyfikując prompt. Do promptu doklejana jest instrukcja: \texttt{CONSTRAINT: Value MUST be unique. DO NOT use: [lista ostatnich wartości]}.
     \item Dodatkowo, przy każdym ponowieniu delikatnie zwiększana jest temperatura modelu (+0.1), aby wymusić większą różnorodność (,,kreatywność'') odpowiedzi.
 \end{enumerate}
@@ -32,4 +32,4 @@ Obecna implementacja algorytmu sortowania topologicznego (\texttt{\_resolve\_gen
 W przypadku wystąpienia cyklu (np. Tabela A wymaga Tabeli B, a Tabela B wymaga Tabeli A), system nie jest w stanie ustalić kolejności generowania. Jest to znany problem w teorii baz danych. W ramach obecnej pracy przyjęto założenie, że użytkownik nie będzie tworzył cyklicznych zależności. W przyszłości planowane jest dodanie walidacji na etapie projektowania schematu, która wykrywałaby cykle i uniemożliwiała zapisanie takiej konfiguracji.
 
 \section{Obsługa błędów sieciowych}
-Integracja z API OpenAI wiąże się z ryzykiem błędów sieciowych (timeouty, błędy 5xx po stronie dostawcy). Aby zapobiec przerwaniu całego procesu generowania przez błąd jednego rekordu, zastosowano bloki \texttt{try-except} wewnątrz pętli generującej. W przypadku błędu API, system wstawia wartość zastępczą i kontynuuje pracę, zamiast przerywać całe zadanie. Użytkownik widzi te błędy w wynikowym zbiorze danych i może podjąć decyzję o ponownym wygenerowaniu.
+Integracja z \gls{API} OpenAI wiąże się z ryzykiem błędów sieciowych (timeouty, błędy 5xx po stronie dostawcy). Aby zapobiec przerwaniu całego procesu generowania przez błąd jednego rekordu, zastosowano bloki \texttt{try-except} wewnątrz pętli generującej. W przypadku błędu \gls{API}, system wstawia wartość zastępczą i kontynuuje pracę, zamiast przerywać całe zadanie. Użytkownik widzi te błędy w wynikowym zbiorze danych i może podjąć decyzję o ponownym wygenerowaniu.

@@ -3,12 +3,12 @@
 Proces wytwarzania oprogramowania wymaga precyzyjnego zdefiniowania założeń projektowych. W przypadku systemów wykorzystujących generatywną sztuczną inteligencję, kluczowe jest wyznaczenie granic między deterministycznym działaniem algorytmów a probabilistyczną naturą modeli językowych. Poniższy rozdział definiuje specyfikację funkcjonalną i niefunkcjonalną projektowanego systemu, stanowiącą fundament dla implementacji architektury mikroserwisowej opisanej w kolejnych częściach pracy.
 
 \section{Wymagania funkcjonalne}
-Głównym celem systemu jest umożliwienie użytkownikom generowania syntetycznych, relacyjnych zbiorów danych o wysokim stopniu realizmu, z wykorzystaniem hybrydowego silnika łączącego metody regułowe i modele LLM.
+Głównym celem systemu jest umożliwienie użytkownikom generowania syntetycznych, relacyjnych zbiorów danych o wysokim stopniu realizmu, z wykorzystaniem hybrydowego silnika łączącego metody regułowe i modele \gls{LLM}.
 
 \subsection*{Definiowanie schematów i typów danych}
 System powinien udostępniać graficzny interfejs do modelowania struktury bazy danych. Użytkownik powinien mieć możliwość definiowania tabel, kolumn oraz typów danych, wybierając spośród trzech głównych generatorów:
 \begin{itemize}
-    \item \textbf{Generator deterministyczny:} Powinien służyć do szybkiego tworzenia standardowych danych o przewidywalnej strukturze (np. imiona, adresy, daty, identyfikatory UUID).
+    \item \textbf{Generator deterministyczny:} Powinien służyć do szybkiego tworzenia standardowych danych o przewidywalnej strukturze (np. imiona, adresy, daty, identyfikatory \gls{UUID}).
     \item \textbf{Generator kontekstowy:} Powinien pozwalać na zdefiniowanie szablonu promptu (np. ,,Napisz e-mail reklamacyjny dotyczący zamówienia \{order\_id\}''), który następnie zostanie przetworzony przez model językowy w celu wygenerowania unikalnej treści.
     \item \textbf{Generator dystrybucyjny:} Powinien umożliwiać zdefiniowanie ważonych list wartości (np. statusy zamówień z określonym prawdopodobieństwem wystąpienia), aby odzwierciedlić rzeczywisty rozkład danych.
 \end{itemize}
@@ -17,10 +17,10 @@ System powinien udostępniać graficzny interfejs do modelowania struktury bazy 
 Krytyczną funkcjonalnością systemu jest automatyczne zarządzanie relacjami między tabelami. Aplikacja powinna pozwalać na definiowanie kluczy obcych \cite{foreign_key}, a silnik generujący ma za zadanie automatycznie budować graf zależności i ustalać topologiczną kolejność generowania danych. Mechanizm ten musi gwarantować, że rekordy w tabelach podrzędnych będą zawsze odwoływać się do istniejących rekordów w tabelach nadrzędnych, eliminując błędy spójności.
 
 \subsection*{Orkiestracja zadań generowania}
-Ze względu na przewidywaną czasochłonność operacji z użyciem LLM, system powinien umożliwiać asynchroniczne uruchamianie procesów generowania. Użytkownik powinien mieć możliwość zlecenia zadania, które trafi do kolejki przetwarzania, a system musi zapewniać mechanizm podglądu postępu prac w czasie rzeczywistym.
+Ze względu na przewidywaną czasochłonność operacji z użyciem \gls{LLM}, system powinien umożliwiać asynchroniczne uruchamianie procesów generowania. Użytkownik powinien mieć możliwość zlecenia zadania, które trafi do kolejki przetwarzania, a system musi zapewniać mechanizm podglądu postępu prac w czasie rzeczywistym.
 
 \subsection*{Bezpośrednia integracja z bazami danych}
-Poza standardowym eksportem do plików płaskich (JSON, CSV) czy eksportu do poleceń INSERT, system powinien oferować funkcję bezpośredniego przesyłania do zewnętrznych baz danych. Aplikacja powinna obsługiwać połączenia z najpopularniejszymi silnikami SQL (PostgreSQL, MySQL, MSSQL, Oracle) i wykonywać operacje typu \textit{batch insert}. Pozwoli to na natychmiastowe wykorzystanie wygenerowanych danych w środowiskach testowych lub deweloperskich bez konieczności ręcznego importu plików.
+Poza standardowym eksportem do plików płaskich (\gls{JSON}, \gls{CSV}) czy eksportu do poleceń INSERT, system powinien oferować funkcję bezpośredniego przesyłania do zewnętrznych baz danych. Aplikacja powinna obsługiwać połączenia z najpopularniejszymi silnikami \gls{SQL} (PostgreSQL, MySQL, MSSQL, Oracle) i wykonywać operacje typu \textit{batch insert}. Pozwoli to na natychmiastowe wykorzystanie wygenerowanych danych w środowiskach testowych lub deweloperskich bez konieczności ręcznego importu plików.
 
 \subsection*{Zarządzanie projektami i szablonami}
 Zalogowani użytkownicy powinni mieć możliwość zapisywania zdefiniowanych schematów w chmurze, co pozwoli na ich późniejszą edycję i ponowne wykorzystanie. System powinien również wspierać import i eksport konfiguracji, ułatwiając współdzielenie schematów w zespołach deweloperskich.
@@ -29,10 +29,10 @@ Zalogowani użytkownicy powinni mieć możliwość zapisywania zdefiniowanych sc
 Wymagania niefunkcjonalne określają atrybuty jakościowe systemu, które są niezbędne do jego wdrożenia w środowisku produkcyjnym, ze szczególnym naciskiem na wydajność, bezpieczeństwo i skalowalność.
 
 \subsection*{Architektura asynchroniczna i wydajność}
-System musi być zdolny do obsługi długotrwałych procesów generowania danych bez blokowania interfejsu użytkownika. W tym celu należy zastosować architekturę opartą na kolejce komunikatów, która odseparuje warstwę API od warstwy wykonawczej. Rozwiązanie to powinno zapewniać stabilność działania nawet przy generowaniu zbiorów liczących dziesiątki tysięcy rekordów, a także odporność na chwilowe błędy dostępności API zewnętrznych.
+System musi być zdolny do obsługi długotrwałych procesów generowania danych bez blokowania interfejsu użytkownika. W tym celu należy zastosować architekturę opartą na kolejce komunikatów, która odseparuje warstwę \gls{API} od warstwy wykonawczej. Rozwiązanie to powinno zapewniać stabilność działania nawet przy generowaniu zbiorów liczących dziesiątki tysięcy rekordów, a także odporność na chwilowe błędy dostępności \gls{API} zewnętrznych.
 
 \subsection*{Prywatność danych i obsługa modeli lokalnych}
-W odpowiedzi na wymogi bezpieczeństwa, system powinien zapewniać możliwość działania w trybie całkowicie odciętym od sieci zewnętrznej \cite{air_gap_networking}. Wymagane jest umożliwienie integracji z lokalnymi modelami LLM, co zagwarantuje, że żadne dane ani prompty nie opuszczą infrastruktury wewnętrznej użytkownika.
+W odpowiedzi na wymogi bezpieczeństwa, system powinien zapewniać możliwość działania w trybie całkowicie odciętym od sieci zewnętrznej \cite{air_gap_networking}. Wymagane jest umożliwienie integracji z lokalnymi modelami \gls{LLM}, co zagwarantuje, że żadne dane ani prompty nie opuszczą infrastruktury wewnętrznej użytkownika.
 
 \subsection*{Skalowalność horyzontalna}
 System powinien być zaprojektowany z myślą o skalowaniu horyzontalnym, wykorzystując konteneryzację. Pozwoli to na łatwe dostosowanie zasobów obliczeniowych do rosnącego zapotrzebowania, poprzez uruchamianie dodatkowych instancji mikroserwisów w środowiskach chmurowych lub klastrach kontenerowych.
