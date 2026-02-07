@@ -4,7 +4,7 @@
 W niniejszym rozdziale przedstawiono szczegóły implementacyjne zrealizowanego systemu generatora danych syntetycznych. Opisano architekturę rozwiązania, zastosowane technologie oraz kluczowe komponenty zarówno po stronie serwera (backend), jak i klienta (frontend). Przedstawiono również sposób konfiguracji środowiska uruchomieniowego oraz proces wdrażania aplikacji przy użyciu konteneryzacji.
 
 \section{Architektura systemu}
-System został zaprojektowany w architekturze klient-serwer, z wyraźnym podziałem na warstwę prezentacji (frontend) oraz warstwę logiki biznesowej i dostępu do danych (backend). Komunikacja między tymi warstwami odbywa się za pośrednictwem interfejsu \gls{REST} \gls{API}. Całość systemu została skonteneryzowana przy użyciu platformy Docker, co zapewnia łatwość wdrożenia i spójność środowiska uruchomieniowego. Poniżej przedstawiono schemat architektury systemu (Rysunek \ref{fig:architecture_diagram}).
+System został zaprojektowany w architekturze klient-serwer, z wyraźnym podziałem na warstwę prezentacji (frontend) oraz warstwę logiki biznesowej i dostępu do danych (backend). Komunikacja między tymi warstwami odbywa się za pośrednictwem interfejsu \gls{REST} \gls{API} \cite{rest_fielding}. Całość systemu została skonteneryzowana przy użyciu platformy Docker, co zapewnia łatwość wdrożenia i spójność środowiska uruchomieniowego. Poniżej przedstawiono schemat architektury systemu (Rysunek \ref{fig:architecture_diagram}).
 
 \begin{figure}[H]
     \centering
@@ -20,7 +20,7 @@ Główne elementy systemu to:
     \item \textbf{Baza Danych Aplikacji (PostgreSQL)}: Przechowuje informacje o użytkownikach, projektach oraz historię zadań.
     \item \textbf{Kolejka Zadań (Redis)}: Pośredniczy w przekazywaniu zadań generowania danych do procesów roboczych (workerów), co pozwala na asynchroniczne przetwarzanie długotrwałych operacji.
     \item \textbf{Worker (Celery)}: Proces odpowiedzialny za właściwe generowanie danych na podstawie zdefiniowanych reguł.
-    \item \textbf{Ollama (\gls{LLM})}: Lokalny serwer modeli językowych, wykorzystywany do generowania danych wymagających kreatywności i kontekstu.
+    \item \textbf{Ollama (\gls{LLM})}: Lokalny serwer modeli językowych, wykorzystywany do generowania danych wymagających kreatywności i kontekstu \cite{ollama}.
 \end{itemize}
 
 \section{Implementacja backendowa}
@@ -61,7 +61,7 @@ Ze względu na potencjalnie długi czas generowania dużych zbiorów danych, pro
 Użytkownik zlecając generowanie danych, wysyła żądanie do endpointu \texttt{/generate/async}. System tworzy nowe zadanie, zwraca identyfikator \texttt{job\_id} i kończy obsługę żądania \gls{HTTP}. Właściwe generowanie odbywa się w tle przez proces Workera. Status zadania jest monitorowany przez klienta w czasie rzeczywistym za pomocą protokołu WebSocket (endpoint \texttt{/ws/jobs/\{job\_id\}}), co pozwala na wyświetlanie paska postępu.
 
 \subsection*{Bezpieczeństwo}
-System implementuje mechanizm uwierzytelniania oparty na tokenach \gls{JWT} (\gls{JSON} Web Tokens). Hasła użytkowników są bezpiecznie przechowywane w bazie danych w formie zahaszowanej (przy użyciu algorytmu bcrypt). Każdy chroniony endpoint \gls{API} weryfikuje ważność tokenu przed przetworzeniem żądania, co realizowane jest za pomocą mechanizmu \textit{Dependency Injection} w FastAPI.
+System implementuje mechanizm uwierzytelniania oparty na tokenach \gls{JWT} (\gls{JSON} Web Tokens) \cite{jwt_rf7519}. Hasła użytkowników są bezpiecznie przechowywane w bazie danych w formie zahaszowanej (przy użyciu algorytmu bcrypt). Każdy chroniony endpoint \gls{API} weryfikuje ważność tokenu przed przetworzeniem żądania, co realizowane jest za pomocą mechanizmu \textit{Dependency Injection} w FastAPI.
 
 \section{Implementacja frontendowa}
 Warstwa prezentacji została zrealizowana jako aplikacja typu Single Page Application (\gls{SPA}) przy użyciu biblioteki React. Do budowania projektu wykorzystano narzędzie Vite, a za stylowanie odpowiada framework Tailwind \gls{CSS}.
@@ -230,7 +230,7 @@ Do komunikacji z backendem wykorzystano bibliotekę \texttt{axios}. Zaimplemento
 \subsection*{Algorytm rozwiązywania zależności (sortowanie topologiczne)}
 Aby zapewnić poprawność relacyjną generowanych danych, niezbędne jest ustalenie odpowiedniej kolejności przetwarzania tabel. Problem ten sprowadza się do posortowania wierzchołków skierowanego grafu zależności w taki sposób, aby dla każdej krawędzi $(u, v)$ wierzchołek $u$ pojawiał się przed wierzchołkiem $v$.
 
-W systemie zaimplementowano wariant algorytmu Kahna. Proces przebiega w następujących krokach:
+W systemie zaimplementowano wariant algorytmu Kahna dla sortowania topologicznego \cite{topological_sort}. Proces przebiega w następujących krokach:
 \begin{enumerate}
     \item \textbf{Budowa grafu zależności}: Dla każdej tabeli analizowanem są jej pola. Jeśli pole jest typu \texttt{foreign\_key}, dodawana jest zależność od tabeli docelowej.
     \item \textbf{Inicjalizacja}: Tworzona jest lista tabel ,,gotowych'' (nieposiadających niewygenerowanych zależności).

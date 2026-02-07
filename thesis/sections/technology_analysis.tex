@@ -1,13 +1,13 @@
 \chapter{Analiza i wybór technologii}
 
-Wybór odpowiedniego stosu technologicznego (ang. technology stack) jest kluczowym elementem procesu projektowania każdego systemu informatycznego. Decyzje podjęte na tym etapie mają bezpośredni wpływ na wydajność, skalowalność, bezpieczeństwo oraz łatwość utrzymania aplikacji w przyszłości. W niniejszym rozdziale przedstawiono analizę dostępnych rozwiązań oraz uzasadniono wybór konkretnych technologii wykorzystanych w projekcie.
+Wybór odpowiednich narzędzi jest kluczowym elementem procesu projektowania każdego systemu informatycznego. Decyzje podjęte na tym etapie mają bezpośredni wpływ na wydajność, skalowalność, bezpieczeństwo oraz łatwość utrzymania aplikacji w przyszłości. W niniejszym rozdziale przedstawiono analizę dostępnych rozwiązań oraz uzasadniono wybór konkretnych technologii wykorzystanych w projekcie.
 
 \section{Język programowania backend: Python}
 Język Python został wybrany jako fundament warstwy serwerowej. Decyzja ta podyktowana była kilkoma czynnikami:
 \begin{enumerate}
     \item \textbf{Ekosystem AI/ML}: Python jest niekwestionowanym liderem w dziedzinie sztucznej inteligencji. Biblioteki takie jak \texttt{openai} czy \texttt{pandas} posiadają natywne wsparcie dla tego języka, co znacznie upraszcza integrację z modelami \gls{LLM}.
-    \item \textbf{Generatory Danych}: Dostępność dojrzałej biblioteki \texttt{Faker}, która jest standardem w generowaniu danych testowych.
-    \item \textbf{Szybkość Prototypowania}: Zwięzła składnia Pythona pozwala na szybkie tworzenie i testowanie nowych funkcjonalności.
+    \item \textbf{Generatory danych}: Dostępność biblioteki \texttt{Faker}, która jest standardem w generowaniu danych testowych.
+    \item \textbf{Szybkość prototypowania}: Zwięzła składnia Pythona pozwala na szybkie tworzenie i testowanie nowych funkcjonalności.
 \end{enumerate}
 
 \section{Framework webowy: FastAPI vs Flask vs Django}
@@ -32,28 +32,28 @@ Do budowy \gls{API} rozważano trzy najpopularniejsze frameworki Pythonowe.
     \label{tab:frameworks_comparison}
 \end{table}
 
-Wybrano \textbf{FastAPI} ze względu na natywną obsługę asynchroniczności (kluczowe przy długotrwałych zapytaniach do \gls{LLM}) oraz automatyczną walidację danych przy użyciu modeli Pydantic, co znacząco podnosi bezpieczeństwo typów.
+Wybrano \textbf{FastAPI}\cite{fastapi} ze względu na natywną obsługę asynchroniczności (kluczowe przy długotrwałych zapytaniach do \gls{LLM}) oraz automatyczną walidację danych przy użyciu modeli Pydantic, co znacząco podnosi bezpieczeństwo typów.
 
 \section{Warstwa prezentacji: React}
-Dla interfejsu użytkownika zdecydowano się na model Single Page Application (\gls{SPA}). Rozważano Angular, Vue.js oraz React. Wybrano React z uwagi na:
+Dla interfejsu użytkownika zdecydowano się na model Single Page Application (\gls{SPA})\cite{spa}. Rozważano Angular, Vue.js oraz React \cite{react}. Wybrano React z uwagi na:
 \begin{itemize}
     \item \textbf{Komponentowość}: Łatwość tworzenia reużywalnych elementów interfejsu (np. formularz pola, modal konfiguracji).
-    \item \textbf{Wirtualny \gls{DOM}}: Wysoka wydajność przy renderowaniu dużych list (podgląd wygenerowanych danych).
-    \item \textbf{Bogaty Ekosystem}: Dostępność gotowych bibliotek \gls{UI} (m.in. Lucide React do ikon) przyspieszających tworzenie aplikacji.
+    \item \textbf{Wirtualny \gls{DOM}}: Wysoka wydajność przy renderowaniu dużych list, co jest kluczowe przy podglądzie wygenerowanych danych.
+    \item \textbf{Bogaty ekosystem}: Dostępność gotowych bibliotek \gls{UI} (m.in. Lucide React do ikon) przyspieszających tworzenie aplikacji.
 \end{itemize}
 
 Jako narzędzie budujące wybrano Vite zamiast starszego Webpacka, co zapewniło natychmiastowy start serwera deweloperskiego i szybsze czasy budowania wersji produkcyjnej.
 
 \section{Baza danych: PostgreSQL}
-Mimo że generowane dane mogą mieć różną strukturę, zdecydowano się na relacyjną bazę danych PostgreSQL do przechowywania metadanych systemu (użytkownicy, projekty, historia zadań).
-Głównym argumentem była potrzeba zachowania ścisłej spójności transakcyjnej przy zarządzaniu projektami oraz natywne wsparcie dla typu danych JSONB. Pozwala to na elastyczne przechowywanie konfiguracji schematów (które są strukturami \gls{JSON}) przy jednoczesnym zachowaniu zalet języka \gls{SQL} do zapytań analitycznych.
+Mimo że generowane dane mogą mieć różną strukturę, zdecydowano się na relacyjną bazę danych PostgreSQL \cite{postgresql} do przechowywania metadanych systemu (użytkownicy, projekty, historia zadań).
+Głównym argumentem była potrzeba zachowania ścisłej spójności transakcyjnej (ACID \cite{acid_transaction}) przy zarządzaniu projektami oraz natywne wsparcie dla typu danych JSONB. Pozwala to na elastyczne przechowywanie konfiguracji schematów (które są strukturami \gls{JSON}) przy jednoczesnym zachowaniu zalet języka \gls{SQL} do zapytań analitycznych.
 
 \section{Przetwarzanie asynchroniczne: Celery + Redis}
 Generowanie tysięcy rekordów, szczególnie z użyciem \gls{LLM}, jest procesem czasochłonnym, który nie może blokować głównego wątku serwera \gls{HTTP}.
 \begin{itemize}
-    \item \textbf{Celery}: Jest to rozproszony system kolejkowy, pozwalający na definiowanie zadań, które mogą być wykonywane przez wiele procesów roboczych równolegle.
-    \item \textbf{Redis}: Pełni rolę brokera wiadomości, przechowując informacje o zadaniach do wykonania oraz ich wynikach. Redis został wybrany ze względu na swoją szybkość (działanie w pamięci \gls{RAM}) i prostotę konfiguracji w porównaniu do RabbitMQ.
+    \item \textbf{Celery\cite{celery}}: Jest to rozproszony system kolejkowy, pozwalający na definiowanie zadań, które mogą być wykonywane przez wiele procesów roboczych równolegle.
+    \item \textbf{Redis\cite{redis}}: Pełni rolę brokera wiadomości, przechowując informacje o zadaniach do wykonania oraz ich wynikach.
 \end{itemize}
 
 \section{Konteneryzacja: Docker}
-Zastosowanie konteneryzacji było wymogiem niefunkcjonalnym, mającym na celu zapewnienie powtarzalności środowiska uruchomieniowego. Definicja środowiska w pliku \texttt{docker-compose.yml} pozwala na uruchomienie całego stosu (Backend, Frontend, Baza Danych, Redis, Worker, \gls{LLM} Server) jedną komendą, eliminując problem ,,u mnie działa''.
+Zastosowanie konteneryzacji było wymogiem niefunkcjonalnym, mającym na celu zapewnienie powtarzalności środowiska uruchomieniowego \cite{docker}. Definicja środowiska w pliku \texttt{docker-compose.yml} pozwala na uruchomienie całego stosu (Backend, Frontend, Baza Danych, Redis, Worker, \gls{LLM} Server) jedną komendą, eliminując problem ,,u mnie działa''\cite{it_works}.
