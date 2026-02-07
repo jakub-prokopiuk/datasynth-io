@@ -40,10 +40,40 @@ function SchemaBuilder({ onAddField, onUpdateField, onCancelEdit, existingFields
     };
 
     const handleParamChange = (newParams) => {
-        setFieldData(prev => ({
-            ...prev,
-            params: { ...prev.params, ...newParams }
-        }));
+        setFieldData(prev => {
+            const updatedParams = { ...prev.params, ...newParams };
+            let newDependencies = [];
+
+            if (prev.type === 'template' && updatedParams.template) {
+                const matches = updatedParams.template.match(/\{\{\s*([a-zA-Z0-9_.]+)\s*(?:\|[^}]+)?\}\}/g);
+                if (matches) {
+                    matches.forEach(m => {
+                        const clean = m.replace(/\{\{|\}\}/g, '').split('|')[0].trim();
+                        if (existingFields.some(f => f.name === clean)) {
+                            newDependencies.push(clean);
+                        } else if (clean.includes('.')) {
+                            const parts = clean.split('.');
+                            if (existingFields.some(f => f.name === parts[0])) {
+                                newDependencies.push(parts[0]);
+                            }
+                        }
+                    });
+                }
+            } else if (prev.type === 'foreign_key' && updatedParams.table_id) {
+                const targetTable = tables.find(t => t.id === updatedParams.table_id);
+                if (targetTable) {
+                    newDependencies.push(`Table: ${targetTable.name}`);
+                }
+            }
+
+            newDependencies = [...new Set(newDependencies)];
+
+            return {
+                ...prev,
+                params: updatedParams,
+                dependencies: newDependencies
+            };
+        });
     };
 
     const handleTypeChange = (newType) => {

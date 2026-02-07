@@ -188,4 +188,4 @@ async def push_to_database(payload: PushToDbRequest, user: dict = Depends(get_cu
     except Exception as e: raise HTTPException(status_code=500, detail=f"Push failed: {str(e)}")
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=8001)

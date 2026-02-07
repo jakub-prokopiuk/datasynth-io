@@ -39,7 +39,7 @@ function LoginPage({ onLogin }) {
                     <Database size={32} className="text-blue-400" />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-white">DataSynth<span className="text-blue-400">.ai</span></h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-white">DataSynth<span className="text-blue-400">.io</span></h1>
                     <p className={`text-sm ${colors.textMuted}`}>Enterprise Data Generator</p>
                 </div>
             </div>

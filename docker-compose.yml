@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile.backend
     container_name: datasynth-backend
     ports:
-      - "8000:8000"
+      - "8001:8001"
     volumes:
       - ./backend:/app
     depends_on:

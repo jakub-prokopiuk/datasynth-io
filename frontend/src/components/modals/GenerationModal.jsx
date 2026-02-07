@@ -15,7 +15,7 @@ function GenerationModal({ onClose, jobId, onComplete }) {
             return;
         }
 
-        const baseUrl = import.meta.env.API_URL || "http://localhost:8000";
+        const baseUrl = import.meta.env.API_URL || "http://localhost:8001";
         const wsUrl = baseUrl.replace(/^http/, 'ws') + `/ws/jobs/${jobId}`;
 
         console.log("Connecting WS to:", wsUrl);
