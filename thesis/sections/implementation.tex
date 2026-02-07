@@ -66,7 +66,7 @@ System implementuje mechanizm uwierzytelniania oparty na tokenach JWT (JSON Web 
 \section{Implementacja Frontendowa}
 Warstwa prezentacji została zrealizowana jako aplikacja typu Single Page Application (SPA) przy użyciu biblioteki React. Do budowania projektu wykorzystano narzędzie Vite, a za stylowanie odpowiada framework Tailwind CSS.
 
-\subsection{Szczegółowy opis interfejsu}
+\subsection*{Szczegółowy opis interfejsu}
 W dalszej części tego rozdziału przedstawiono kluczowe elementy interfejsu graficznego aplikacji. Interfejs został zaprojektowany w sposób minimalistyczny, z wykorzystaniem ciemnego motywu (Dark Mode), aby zapewnić komfort pracy przy długotrwałym użytkowaniu. Aplikacja jest w języku angielskim, co jest standardem w narzędziach deweloperskich.
 
 \subsection*{Ekran Logowania}
@@ -219,13 +219,74 @@ Po zakończeniu procesu (Rysunek \ref{fig:generation_modal}), wyniki są prezent
 Na rysunkach \ref{fig:generated_data_table} oraz \ref{fig:generated_data_json} przedstawiono przykładowy widok wygenerowanych danych. Użytkownik może łatwo przełączać się między widokiem tabelarycznym a surowym JSON-em. Rysunek \ref{fig:push_to_database_modal} prezentuje formularz umożliwiający bezpośredni eksport danych do zewnętrznej bazy danych, co jest szczególnie przydatne dla deweloperów chcących szybko zasilić testową bazę danymi.
 
 
-\subsection{Zarządzanie Stanem}
+\subsection*{Zarządzanie Stanem}
 Stan aplikacji jest zarządzany głównie przy użyciu hooków React (\texttt{useState}, \texttt{useEffect}). Do obsługi złożonego stanu edytora schematu stworzono dedykowany hook \texttt{useSchema}, który centralizuje logikę dodawania, usuwania i edycji tabel oraz pól.
 
-\subsection{Komunikacja z API}
+\subsection*{Komunikacja z API}
 Do komunikacji z backendem wykorzystano bibliotekę \texttt{axios}. Zaimplementowano instancję klienta API (w pliku \texttt{api.js}), która automatycznie dołącza token autoryzacyjny do każdego żądania oraz obsługuje błędy odpowiedzi serwera (np. automatyczne wylogowanie po wygaśnięciu tokenu).
 
-\section{Infrastruktura i Wdrożenie}
+\section{Implementacja algorytmów}
+
+\subsection*{Algorytm rozwiązywania zależności (sortowanie topologiczne)}
+Aby zapewnić poprawność relacyjną generowanych danych, niezbędne jest ustalenie odpowiedniej kolejności przetwarzania tabel. Problem ten sprowadza się do posortowania wierzchołków skierowanego grafu zależności w taki sposób, aby dla każdej krawędzi $(u, v)$ wierzchołek $u$ pojawiał się przed wierzchołkiem $v$.
+
+W systemie zaimplementowano wariant algorytmu Kahna. Proces przebiega w następujących krokach:
+\begin{enumerate}
+    \item \textbf{Budowa grafu zależności}: Dla każdej tabeli analizowanem są jej pola. Jeśli pole jest typu \texttt{foreign\_key}, dodawana jest zależność od tabeli docelowej.
+    \item \textbf{Inicjalizacja}: Tworzona jest lista tabel ,,gotowych'' (nieposiadających niewygenerowanych zależności).
+    \item \textbf{Iteracja}: Dopóki lista ,,gotowych'' tabel nie jest pusta:
+          \begin{itemize}
+              \item Wybierana jest tabela, dodawana do listy wynikowej.
+              \item Tabela ta jest usuwana z zależności innych tabel.
+              \item Jeśli w wyniku usunięcia inna tabela traci wszystkie zależności, trafia na listę "gotowych".
+          \end{itemize}
+    \item \textbf{Weryfikacja}: Jeśli po zakończeniu algorytmu lista wynikowa jest krótsza niż całkowita liczba tabel, oznacza to wykrycie cyklu, co jest zgłaszane jako błąd.
+\end{enumerate}
+
+\subsection*{Integracja z LLM}
+Generowanie danych przy użyciu LLM odbywa się w metodzie \texttt{\_generate\_llm\_value}. Proces ten jest znacznie bardziej złożony niż proste wywołanie API.
+
+\subsubsection*{Konstrukcja Promptu}
+Prompt wysyłany do modelu składa się z trzech części:
+\begin{itemize}
+    \item \textbf{System Message}: Instruuje model, aby wcielił się w rolę generatora danych fikcyjnych.
+    \item \textbf{Szablon użytkownika}: Szablon zdefiniowany przez użytkownika, np. ,,Opisz osobę \{name\} \{surname\}''. Zmienne w nawiasach klamrowych są podmieniane na wartości wygenerowane w bieżącym wierszu przy użyciu silnika Jinja2.
+    \item \textbf{Ograniczenia (Constraints)}: Dodawane dynamicznie instrukcje, np. wymuszenie unikalności.
+\end{itemize}
+
+\subsubsection*{Unikalność generowanych danych}
+Zapewnienie unikalności w modelach probabilistycznych jest wyzwaniem. System stosuje podejście iteracyjne:
+\begin{verbatim}
+attempts = 0
+while attempts < 10:
+    temperature = base_temp + (attempts * 0.1)
+    prompt = construct_prompt(template, avoid_values)
+    context_injection(prompt, current_row_data)
+    value = await call_llm(prompt, temperature)
+    
+    if is_unique(value):
+        return value
+    
+    attempts += 1
+\end{verbatim}
+Wzrost temperatury w kolejnych próbach zwiększa ,,kreatywność'' modelu, zmniejszając szansę na wygenerowanie duplikatu.
+
+\section{WebSocket}
+Do wizualizacji postępu w czasie rzeczywistym wykorzystano protokół WebSocket. Po nawiązaniu połączenia pod adresem \texttt{ws://server:8001/ws/jobs/\{job\_id\}}, serwer cyklicznie przesyła ramki JSON o strukturze:
+
+\begin{verbatim}
+{
+  "job_id": "9fa2204c-72d6-...",
+  "status": "processing",  // lub "completed", "failed"
+  "progress": 45,          // wartość procentowa 0-100
+  "total_rows": 1000,
+  "error": null            // ewentualny komunikat błędu
+}
+\end{verbatim}
+
+Frontend (komponent \texttt{GenerationModal}) subskrybuje te wiadomości i na ich podstawie aktualizuje pasek postępu. Po otrzymaniu statusu \texttt{completed}, połączenie jest zamykane, a interfejs przechodzi do widoku wyników.
+
+\section{Infrastruktura i konteneryzacja}
 Całe środowisko uruchomieniowe zostało zdefiniowane w pliku \texttt{docker-compose.yml}. Definiuje on następujące serwisy:
 \begin{itemize}
     \item \texttt{backend}: Kontener z aplikacją FastAPI.
