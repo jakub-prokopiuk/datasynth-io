@@ -2,14 +2,14 @@
 
 Proces weryfikacji poprawności działania systemu został podzielony na kilka etapów, obejmujących testy jednostkowe warstwy backendowej, testy integracyjne \gls{API} oraz manualne testy interfejsu użytkownika. Takie podejście pozwoliło na wykrycie błędów zarówno na poziomie logicznym, jak i funkcjonalnym.
 
-\section{Testy jednostkowe i integracyjne backend}
+\section{Testy jednostkowe i integracyjne backendu}
 Warstwa serwerowa aplikacji, zaimplementowana w języku Python, została pokryta testami automatycznymi przy użyciu frameworka \texttt{pytest}. Głównym celem tych testów była weryfikacja poprawności działania poszczególnych endpointów \gls{API} oraz logiki biznesowej generatora danych.
 
 Testy, zlokalizowane w katalogu \texttt{backend/tests}, obejmują następujące scenariusze:
 \begin{itemize}
     \item \textbf{Weryfikacja autentykacji}: Sprawdzenie poprawności generowania i walidacji tokenów \gls{JWT}. Testy upewniają się, że dostęp do chronionych zasobów bez ważnego tokenu jest blokowany (kod błędu 401 Unauthorized).
-    \item \textbf{\gls{CRUD} Projektów}: Testowanie operacji tworzenia, odczytu i usuwania projektów. Weryfikowana jest poprawność zapisu struktury \gls{JSON} do bazy danych PostgreSQL.
-    \item \textbf{Walidacja Schematów Pydantic}: Sprawdzenie, czy system poprawnie odrzuca błędne żądania (np. brak wymaganych pól, niepoprawne typy danych).
+    \item \textbf{\gls{CRUD} projektów}: Testowanie operacji tworzenia, odczytu i usuwania projektów. Weryfikowana jest poprawność zapisu struktury \gls{JSON} do bazy danych PostgreSQL.
+    \item \textbf{Walidacja schematów Pydantic}: Sprawdzenie, czy system poprawnie odrzuca błędne żądania (np. brak wymaganych pól, niepoprawne typy danych).
     \item \textbf{Symulacja generowania danych}: Uruchamianie silnika generującego dla prostych konfiguracji w celu potwierdzenia, że zwracane dane są zgodne z zadeklarowanym typem.
 \end{itemize}
 
@@ -54,13 +54,13 @@ Przeprowadzono testy wydajnościowe mające na celu określenie limitów systemu
     \centering
     \begin{tabular}{|l|c|c|c|}
         \hline
-        \textbf{Typ danych} & \textbf{Liczba wierszy} & \textbf{Czas (Faker)} & \textbf{Czas (\gls{LLM})} \\
+        \textbf{Typ danych}       & \textbf{Liczba wierszy} & \textbf{Czas (Faker)} & \textbf{Czas (\gls{LLM})} \\
         \hline
-        Proste (Imie, Adres) & 1 000 & 0.8s & - \\
+        Proste (Imie, Adres)      & 1 000                   & 0.8s                  & -                         \\
         \hline
-        Proste & 10 000 & 5.2s & - \\
+        Proste                    & 10 000                  & 5.2s                  & -                         \\
         \hline
-        Złożone (z kontekstem AI) & 100 & - & 145s \\
+        Złożone (z kontekstem AI) & 100                     & -                     & 145s                      \\
         \hline
     \end{tabular}
     \caption{Zestawienie czasów generowania danych}
@@ -68,3 +68,19 @@ Przeprowadzono testy wydajnościowe mające na celu określenie limitów systemu
 \end{table}
 
 Jak widać w Tabeli \ref{tab:performance_tests}, generowanie danych przy użyciu algorytmów pseudolosowych (Faker) jest niezwykle szybkie i skalowalne liniowo. Wąskim gardłem systemu jest generowanie danych przy użyciu \gls{LLM}, co potwierdza słuszność decyzji o zastosowaniu przetwarzania asynchronicznego.
+
+\section{Testy End-to-End (\gls{E2E})}
+W celu zapewnienia najwyższej jakości oprogramowania oraz weryfikacji integralności całego systemu, wprowadzono kompleksowe testy typu \gls{E2E}. Testy te mają na celu symulację rzeczywistych scenariuszy użytkowania aplikacji, sprawdzając współpracę wszystkich komponentów systemu - od interfejsu użytkownika w przeglądarce, przez warstwę \gls{API}, aż po logikę biznesową i bazy danych.
+
+Do realizacji testów \gls{E2E} wybrano framework Playwright. Jest on nowoczesnym narzędziem umożliwiającym automatyzację testów w wielu przeglądarkach (Chromium, Firefox, WebKit) oraz zapewniającym wysoką niezawodność dzięki mechanizmom automatycznego oczekiwania na elementy interfejsu.
+
+Zaimplementowany scenariusz testowy pokrywa kluczową ścieżkę krytyczną \cite{happy_path} użytkownika:
+\begin{enumerate}
+    \item \textbf{Autoryzacja}: Scenariusz rozpoczyna się od wejścia na stronę logowania. Automat testowy wprowadza dane uwierzytelniające administratora i weryfikuje poprawne przekierowanie do głównego widoku aplikacji.
+    \item \textbf{Definicja schematu}: Wirtualny użytkownik dodaje nową tabelę o nazwie ,,users'' oraz konfiguruje jej strukturę, dodając kolumnę ,,name''. Test weryfikuje poprawność interakcji z formularzami oraz dynamiczne aktualizacje interfejsu.
+    \item \textbf{Generowanie danych}: Następuje uruchomienie procesu generowania danych poprzez kliknięcie przycisku ,,Run Generation''. Test monitoruje asynchroniczny proces, oczekując na komunikaty o postępie przekazywane przez WebSocket.
+    \item \textbf{Weryfikacja wyników}: Ostatnim krokiem jest potwierdzenie zakończenia zadania sukcesem (pojawienie się komunikatu ,,Data generated!'') oraz sprawdzenie dostępności przycisku pobierania wyników.
+\end{enumerate}
+
+Dzięki zastosowaniu symulowania odpowiedzi backendu w niektórych testach, możliwe jest izolowane testowanie warstwy frontendowej, co przyspiesza proces deweloperski i uniezależnia testy interfejsu od dostępności zewnętrznych usług czy modeli \gls{LLM}. Takie podejście gwarantuje, że błędy w warstwie prezentacji są wykrywane natychmiastowo, zanim kod trafi na środowisko produkcyjne.
+

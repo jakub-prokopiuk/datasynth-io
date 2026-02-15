@@ -9,7 +9,7 @@ Jednym z głównych wyzwań było zapewnienie spójności informacji o postępie
 Protokół \gls{HTTP} jest bezstanowy, co utrudnia przesyłanie informacji o postępie (np. ,,45\% wykonano'') w czasie rzeczywistym. Początkowo rozważano technikę \textit{Long Polling}, jednak przy dużej liczbie jednoczesnych użytkowników generowałoby to nadmiarowy ruch sieciowy.
 
 \subsection*{Rozwiązanie}
-Zdecydowano się na implementację protokołu WebSocket. Backend uruchamia dedykowany endpoint \texttt{/ws/jobs/\{job\_id\}}, który nasłuchuje zdarzeń od menedżera zadań (\texttt{job\_manager.py}). Worker zapisuje postęp w pamięci współdzielonej (zmienna globalna w instancji serwera lub Redis), a wątek WebSocket cyklicznie (co 0.5s) odczytuje ten stan i wypycha go do klienta. Dzięki temu interfejs użytkownika jest płynny i responsywny.
+Zdecydowano się na implementację protokołu WebSocket. Backend uruchamia dedykowany endpoint \texttt{/ws/jobs/\{job\_id\}}, który nasłuchuje zdarzeń od menedżera zadań (\texttt{job\_manager.py}). Worker zapisuje postęp w pamięci współdzielonej (zmienna globalna w instancji serwera lub Redis), a wątek WebSocket cyklicznie (co 0.5s) odczytuje ten stan i wysyła go do klienta. Dzięki temu interfejs użytkownika jest płynny i responsywny.
 
 \section{Determinizm i unikalność przy zastosowaniu LLM}
 Modele językowe z natury są niedeterministyczne, co stanowi problem przy generowaniu pól, które muszą być unikalne (np. unikalne opisy produktów, numery seryjne generowane przez AI).

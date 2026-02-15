@@ -58,10 +58,10 @@ Generowanie wartości dla poszczególnych pól realizowane jest przez dedykowane
 \subsection*{Przetwarzanie asynchroniczne}
 Ze względu na potencjalnie długi czas generowania dużych zbiorów danych, proces ten został odseparowany od głównego wątku obsługi żądań \gls{HTTP}. Wykorzystano w tym celu bibliotekę Celery oraz bazę Redis jako brokera wiadomości.
 
-Użytkownik zlecając generowanie danych, wysyła żądanie do endpointu \texttt{/generate/async}. System tworzy nowe zadanie, zwraca identyfikator \texttt{job\_id} i kończy obsługę żądania \gls{HTTP}. Właściwe generowanie odbywa się w tle przez proces Workera. Status zadania jest monitorowany przez klienta w czasie rzeczywistym za pomocą protokołu WebSocket (endpoint \texttt{/ws/jobs/\{job\_id\}}), co pozwala na wyświetlanie paska postępu.
+Użytkownik, zlecając generowanie danych, wysyła żądanie do endpointu \texttt{/generate/async}. System tworzy nowe zadanie, zwraca identyfikator \texttt{job\_id} i kończy obsługę żądania \gls{HTTP}. Właściwe generowanie odbywa się w tle przez proces Workera. Status zadania jest monitorowany przez klienta w czasie rzeczywistym za pomocą protokołu WebSocket (endpoint \texttt{/ws/jobs/\{job\_id\}}), co pozwala na wyświetlanie paska postępu.
 
 \subsection*{Bezpieczeństwo}
-System implementuje mechanizm uwierzytelniania oparty na tokenach \gls{JWT} (\gls{JSON} Web Tokens) \cite{jwt_rf7519}. Hasła użytkowników są bezpiecznie przechowywane w bazie danych w formie zahaszowanej (przy użyciu algorytmu bcrypt). Każdy chroniony endpoint \gls{API} weryfikuje ważność tokenu przed przetworzeniem żądania, co realizowane jest za pomocą mechanizmu \textit{Dependency Injection} w FastAPI.
+System implementuje mechanizm uwierzytelniania oparty na tokenach \gls{JWT} \cite{jwt_rf7519}. Hasła użytkowników są bezpiecznie przechowywane w bazie danych w formie zahaszowanej (przy użyciu algorytmu bcrypt). Każdy chroniony endpoint \gls{API} weryfikuje ważność tokenu przed przetworzeniem żądania, co realizowane jest za pomocą mechanizmu \textit{Dependency Injection} w FastAPI.
 
 \section{Implementacja frontendowa}
 Warstwa prezentacji została zrealizowana jako aplikacja typu Single Page Application (\gls{SPA}) przy użyciu biblioteki React. Do budowania projektu wykorzystano narzędzie Vite, a za stylowanie odpowiada framework Tailwind \gls{CSS}.
@@ -92,7 +92,7 @@ Po zalogowaniu użytkownik dostaje dostęp do głównego widoku aplikacji, któr
 
 Lewy panel (widoczny na Rysunku \ref{fig:main_view}) zawiera zestaw narzędzi niezbędnych do zdefiniowania struktury zbioru danych. Składa się on z następujących kluczowych modułów:
 
-\subsubsection*{1. Pasek Narzędzi}
+\subsubsection*{1. Pasek narzędzi}
 W górnej części panelu znajduje się pasek narzędzi służący do zarządzania stanem całego projektu. Użytkownik ma tutaj dostęp do następujących funkcjonalności:
 \begin{itemize}
     \item \textbf{Zarządzanie Projektami}: Przyciski umożliwiające zapisywanie i wczytywanie projektów z bazy danych.
@@ -101,13 +101,13 @@ W górnej części panelu znajduje się pasek narzędzi służący do zarządzan
     \item \textbf{Wczytywanie przykładowych danych}: Opcja pozwalająca na szybkie załadowanie przykładowego schematu (np. ,,E-commerce''), co jest szczególnie przydatne dla nowych użytkowników.
 \end{itemize}
 
-\subsubsection*{2. Konfiguracja Globalna (Global Configuration)}
+\subsubsection*{2. Konfiguracja globalna (Global Configuration)}
 Poniżej paska narzędzi znajdują się parametry definiujące ogólne właściwości generowanego zbioru danych:
 \begin{itemize}
-    \item \textbf{Nazwa Zbioru}: Pole tekstowe definiujące nazwę zadania, która później służy jako nazwa pliku wynikowego.
+    \item \textbf{Nazwa zbioru}: Pole tekstowe definiujące nazwę zadania, która później służy jako nazwa pliku wynikowego.
     \item \textbf{Lokalizacja (Locale)}: Rozwijana lista pozwalająca wybrać krąg kulturowy generowanych danych (np. \texttt{en\_US}, \texttt{pl\_PL}, \texttt{de\_DE}). Wybór ten wpływa na formatowanie dat, walut, numerów telefonów oraz język generowanych tekstów przez bibliotekę Faker.
-    \item \textbf{Format Wyjściowy}: Pozwala zdefiniować, w jakiej postaci mają zostać zwrócone dane (\gls{JSON}, \gls{CSV} spakowany w ZIP, plik \gls{SQL}).
-    \item \textbf{Globalny Kontekst AI}: Pole tekstowe, w którym użytkownik może opisać ogólny charakter generowanych danych (np. ,,System medyczny dla szpitala wojewódzkiego''). Kontekst ten jest doklejany do promptów wysyłanych do modeli \gls{LLM}, co pozwala na zachowanie spójności tematycznej wszystkich generowanych pól.
+    \item \textbf{Format wyjściowy}: Pozwala zdefiniować, w jakiej postaci mają zostać zwrócone dane (\gls{JSON}, \gls{CSV} spakowany w ZIP, plik \gls{SQL}).
+    \item \textbf{Globalny kontekst AI}: Pole tekstowe, w którym użytkownik może opisać ogólny charakter generowanych danych (np. ,,System medyczny dla szpitala wojewódzkiego''). Kontekst ten jest ,,doklejany'' do promptów wysyłanych do modeli \gls{LLM}, co pozwala na zachowanie spójności tematycznej wszystkich generowanych pól.
 \end{itemize}
 
 \begin{figure}[H]
@@ -118,7 +118,7 @@ Poniżej paska narzędzi znajdują się parametry definiujące ogólne właściw
 \end{figure}
 
 
-\subsubsection*{3. Menedżer Tabel (Table Manager)}
+\subsubsection*{3. Menedżer tabel (Table Manager)}
 Poniżej konfiguracji znajduje się lista zdefiniowanych tabel. Moduł ten pozwala na:
 \begin{itemize}
     \item \textbf{Tworzenie struktur relacyjnych}: Użytkownik może dodawać dowolną liczbę tabel, co pozwala na modelowanie złożonych relacji bazodanowych.
@@ -134,7 +134,7 @@ Poniżej konfiguracji znajduje się lista zdefiniowanych tabel. Moduł ten pozwa
 \end{figure}
 
 
-\subsubsection*{4. Kreator Pól (Schema Builder)}
+\subsubsection*{4. Kreator pól (Schema Builder)}
 Kluczowym elementem interfejsu jest formularz dodawania nowych pól do tabeli.
 \begin{figure}[H]
     \centering
@@ -167,7 +167,7 @@ Na rysunkach \ref{fig:schema_builder_ai} oraz \ref{fig:schema_builder_distributi
 \end{figure}
 
 
-\subsubsection*{5. Lista Pól (Field List)}
+\subsubsection*{5. Lista pól (Field List)}
 Dolną część panelu zajmuje lista pól dla aktywnej tabeli. Każdy element listy prezentuje nazwę kolumny, typ generatora (oznaczony kolorowym badge'm dla łatwej identyfikacji) oraz ewentualne flagi (np. \texttt{UNIQ} dla wartości unikalnych). W przypadku pól zależnych (np. Template lub Foreign Key), system wizualizuje zależności, wyświetlając informację, do jakich innych atrybutów lub tabel odwołuje się dana kolumna. Moduł umożliwia również szybką edycję parametrów oraz usuwanie poszczególnych pól ze struktury.
 
 \begin{figure}[H]
@@ -246,7 +246,7 @@ W systemie zaimplementowano wariant algorytmu Kahna dla sortowania topologiczneg
 \subsection*{Integracja z LLM}
 Generowanie danych przy użyciu \gls{LLM} odbywa się w metodzie \texttt{\_generate\_llm\_value}. Proces ten jest znacznie bardziej złożony niż proste wywołanie \gls{API}.
 
-\subsubsection*{Konstrukcja Promptu}
+\subsubsection*{Konstrukcja promptu}
 Prompt wysyłany do modelu składa się z trzech części:
 \begin{itemize}
     \item \textbf{System Message}: Instruuje model, aby wcielił się w rolę generatora danych fikcyjnych.

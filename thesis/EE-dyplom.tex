@@ -45,13 +45,13 @@
 % In case of thesis in English swap the order - English version goes first.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \streszczeniepracy{
-Poniższa praca magisterska poświęcona jest zaprojektowaniu i implementacji zaawansowanego systemu do generowania syntetycznych, relacyjnych zbiorów danych, który łączy tradycyjne metody algorytmiczne z możliwościami Dużych Modeli Językowych.
+Poniższa praca magisterska poświęcona jest zaprojektowaniu i implementacji zaawansowanego systemu do generowania syntetycznych, relacyjnych zbiorów danych, który łączy tradycyjne metody algorytmiczne z możliwościami dużych modeli językowych.
 
 W ramach pracy opracowano aplikację o architekturze mikroserwisowej, wykorzystującą konteneryzację Docker do integracji warstwy frontendowej opartej na bibliotece React, warstwy backendowej zrealizowanej w frameworku FastAPI oraz systemu kolejkowania zadań asynchronicznych Redis i Celery. Takie podejście pozwoliło na zapewnienie skalowalności i wydajności niezbędnej do generowania dużych wolumenów danych bez blokowania interfejsu użytkownika.
 
 Kluczowym elementem rozwiązania jest silnik generujący, który implementuje hybrydowe podejście do tworzenia danych. Wykorzystuje on bibliotekę Faker do danych strukturalnych oraz modele LLM - obejmujące zarówno rozwiązania chmurowe (OpenAI), jak i modele uruchamiane lokalnie - do generowania treści kreatywnych i kontekstowych. System automatycznie analizuje schemat bazy danych i rozwiązuje zależności kluczy obcych w celu zachowania integralności referencyjnej generowanych rekordów.
 
-Zaimplementowane rozwiązanie wykracza poza standardowe generatory plików płaskich, oferując mechanizm bezpośredniego zrzutu danych do popularnych silników bazodanowych, takich jak PostgreSQL, MySQL, MSSQL oraz Oracle. Dodatkowo system wyposażono w moduł uwierzytelniania, zarządzanie projektami w chmurze oraz podgląd postępu generowania w czasie rzeczywistym. Rezultatem pracy jest kompletne, bezpieczne i gotowe do wdrożenia narzędzie, wspierające procesy testowania, prototypowania i analityki danych.
+Zaimplementowane rozwiązanie wykracza poza standardowe generatory plików płaskich, oferując mechanizm bezpośredniego zrzutu danych do popularnych silników bazodanowych, takich jak PostgreSQL, MySQL, MSSQL oraz Oracle. Dodatkowo system wyposażono w moduł uwierzytelniania, zarządzanie projektami w chmurze oraz podgląd postępu generowania w czasie rzeczywistym. Rezultatem pracy jest kompletne, gotowe do wdrożenia narzędzie, wspierające procesy testowania, prototypowania i analityki danych.
 }
 
 \slowakluczowe{Generowanie danych syntetycznych, LLM, FastAPI, bazy danych, Docker, Sztuczna Inteligencja, Redis, Celery}
@@ -63,7 +63,7 @@ As part of the thesis, an application with a microservice architecture was devel
 
 A key element of the solution is the generation engine, which implements a hybrid approach to data creation. It employs standard libraries for structured data and Large Language Models—including both cloud-based solutions and local instances—to generate creative and contextual content. The system automatically analyzes the database schema, resolving foreign key dependencies to maintain the referential integrity of the generated records.
 
-The implemented solution extends beyond standard flat-file generators, offering a mechanism for direct data dumps to popular database engines such as PostgreSQL, MySQL, MSSQL, and Oracle. Additionally, the system is equipped with an authentication module, cloud project management capabilities, and real-time generation progress monitoring via WebSocket protocol. The result of the work is a complete, secure, and ready-to-deploy tool that supports testing, prototyping, and data analytics processes.
+The implemented solution extends beyond standard flat-file generators, offering a mechanism for direct data dumps to popular database engines such as PostgreSQL, MySQL, MSSQL, and Oracle. Additionally, the system is equipped with an authentication module, cloud project management capabilities, and real-time generation progress monitoring via WebSocket protocol. The result of the work is a complete and ready-to-deploy tool that supports testing, prototyping, and data analytics processes.
 } 
 \thesiskeywords{Synthetic Data Generation, LLM, FastAPI, Databases, Docker, Artificial Intelligence, Redis, Celery}
 

@@ -23,7 +23,7 @@ Do budowy \gls{API} rozważano trzy najpopularniejsze frameworki Pythonowe.
         \hline
         Wydajność      & Średnia         & Średnia              & Wysoka               \\
         \hline
-        Obsługa Async  & Dodana później  & Ograniczona          & Natywna              \\
+        Obsługa Async  & Natywna         & Ograniczona          & Natywna              \\
         \hline
         Typowanie      & Opcjonalne      & Brak                 & Wymuszone (Pydantic) \\
         \hline
@@ -56,4 +56,4 @@ Generowanie tysięcy rekordów, szczególnie z użyciem \gls{LLM}, jest procesem
 \end{itemize}
 
 \section{Konteneryzacja: Docker}
-Zastosowanie konteneryzacji było wymogiem niefunkcjonalnym, mającym na celu zapewnienie powtarzalności środowiska uruchomieniowego \cite{docker}. Definicja środowiska w pliku \texttt{docker-compose.yml} pozwala na uruchomienie całego stosu (Backend, Frontend, Baza Danych, Redis, Worker, \gls{LLM} Server) jedną komendą, eliminując problem ,,u mnie działa''\cite{it_works}.
+Zastosowanie konteneryzacji było wymogiem niefunkcjonalnym, mającym na celu zapewnienie powtarzalności środowiska uruchomieniowego \cite{docker}. Definicja środowiska w pliku \texttt{docker-compose.yml} pozwala na uruchomienie całego stosu (Backend, Frontend, Baza Danych, Redis, Worker, \gls{LLM} Server) jedną komendą, eliminując problem niezgodności w działaniu na różnych maszynach deweloperskich.

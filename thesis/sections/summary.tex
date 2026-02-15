@@ -6,8 +6,8 @@ Celem niniejszej pracy magisterskiej było zaprojektowanie i zaimplementowanie n
 \section{Osiągnięcia}
 W ramach prac zrealizowano wszystkie założone wymagania funkcjonalne i niefunkcjonalne:
 \begin{itemize}
-    \item \textbf{Hybrydowy Silnik Generujący}: Stworzono elastyczny mechanizm łączący bibliotekę Faker, szablony Jinja2 oraz modele \gls{LLM} (OpenAI/Ollama). Pozwala to na generowanie danych o dowolnym stopniu skomplikowania – od prostych typów liczbowych po złożone opisy tekstowe.
-    \item \textbf{Obsługa Relacji}: Zaimplementowano algorytm automatycznego rozwiązywania zależności między tabelami, co gwarantuje spójność referencyjną generowanych zbiorów danych.
+    \item \textbf{Hybrydowy silnik generujący}: Stworzono elastyczny mechanizm łączący bibliotekę Faker, szablony Jinja2 oraz modele \gls{LLM} (OpenAI/Ollama). Pozwala to na generowanie danych o dowolnym stopniu skomplikowania – od prostych typów liczbowych po złożone opisy tekstowe.
+    \item \textbf{Obsługa relacji}: Zaimplementowano algorytm automatycznego rozwiązywania zależności między tabelami, co gwarantuje spójność referencyjną generowanych zbiorów danych.
     \item \textbf{Wydajność}: Dzięki zastosowaniu architektury asynchronicznej (Celery + Redis), system jest w stanie obsłużyć generowanie tysięcy rekordów bez blokowania interfejsu użytkownika.
     \item \textbf{Konteneryzacja}: Całość rozwiązania została zamknięta w kontenerach Docker, co drastycznie upraszcza proces wdrożenia i konfiguracji w dowolnym środowisku.
 \end{itemize}
