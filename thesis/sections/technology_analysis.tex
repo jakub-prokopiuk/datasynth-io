@@ -11,38 +11,74 @@ Język Python został wybrany jako fundament warstwy serwerowej. Decyzja ta pody
 \end{enumerate}
 
 \section{Framework webowy: FastAPI vs Flask vs Django}
-Do budowy \gls{API} rozważano trzy najpopularniejsze frameworki Pythonowe.
+Do budowy \gls{API} rozważano trzy najpopularniejsze frameworki Pythonowe: Django\cite{django}, Flask\cite{flask} oraz FastAPI\cite{fastapi}.
+Różnią się one przede wszystkim filozofią projektową. Django to duży framework, oferujący gotowe rozwiązania (ORM, panel administracyjny, uwierzytelnianie), co jednak wiąże się z dużym narzutem. Flask i FastAPI to mikroframeworki, dostarczające jedynie niezbędnych narzędzi do obsługi żądań HTTP, pozostawiając programiście swobodę w doborze bibliotek (np. do bazy danych).
 
 \begin{table}[H]
     \centering
     \begin{tabular}{|l|l|l|l|}
         \hline
-        \textbf{Cecha} & \textbf{Django} & \textbf{Flask}       & \textbf{FastAPI}     \\
+        \textbf{Cecha} & \textbf{Django} & \textbf{Flask} & \textbf{FastAPI}     \\
         \hline
-        Architektura   & Monolit         & Mikro (rozszerzalny) & Mikro (nowoczesny)   \\
+        Wydajność      & Średnia         & Średnia        & Wysoka               \\
         \hline
-        Wydajność      & Średnia         & Średnia              & Wysoka               \\
+        Obsługa Async  & Częściowa       & Ograniczona    & Natywna              \\
         \hline
-        Obsługa Async  & Natywna         & Ograniczona          & Natywna              \\
-        \hline
-        Typowanie      & Opcjonalne      & Brak                 & Wymuszone (Pydantic) \\
+        Typowanie      & Opcjonalne      & Brak           & Wymuszone (Pydantic) \\
         \hline
     \end{tabular}
     \caption{Porównanie frameworków webowych Python}
     \label{tab:frameworks_comparison}
 \end{table}
 
-Wybrano \textbf{FastAPI}\cite{fastapi} ze względu na natywną obsługę asynchroniczności (kluczowe przy długotrwałych zapytaniach do \gls{LLM}) oraz automatyczną walidację danych przy użyciu modeli Pydantic, co znacząco podnosi bezpieczeństwo typów.
+Wybrano FastAPI ze względu na natywną obsługę asynchroniczności (kluczowe przy długotrwałych zapytaniach do \gls{LLM}) oraz automatyczną walidację danych przy użyciu modeli Pydantic, co znacząco podnosi bezpieczeństwo typów.
 
 \section{Warstwa prezentacji: React}
-Dla interfejsu użytkownika zdecydowano się na model Single Page Application (\gls{SPA})\cite{spa}. Rozważano Angular, Vue.js oraz React \cite{react}. Wybrano React z uwagi na:
+Dla interfejsu użytkownika zdecydowano się na model oparty na technologii jednej strony (\gls{SPA})\cite{spa}, co pozwala na płynne przechodzenie między widokami bez konieczności przeładowywania całej strony. W procesie wyboru technologii rozważano trzy wiodące rozwiązania: Angular\cite{angular}, Vue.js\cite{vuejs} oraz React \cite{react}.
+
+Aby dokonać obiektywnego wyboru, zdefiniowano następujące kryteria porównawcze:
+\begin{enumerate}
+    \item \textbf{Próg wejścia}: Poziom trudności oraz czas wymagany do efektywnego rozpoczęcia pracy z technologią.
+    \item \textbf{Model danych}: Sposób przepływu danych (jednokierunkowy vs dwukierunkowy) i jego wpływ na przewidywalność stanu aplikacji.
+    \item \textbf{Elastyczność}: Poziom swobody w doborze bibliotek towarzyszących (np. do routingu, zarządzania stanem).
+\end{enumerate}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|l|l|}
+        \hline
+        \textbf{Cecha} & \textbf{Angular} & \textbf{Vue.js} & \textbf{React}  \\
+        \hline
+        Próg wejścia   & Wysoki           & Niski           & Średni          \\
+        \hline
+        Model danych   & Dwukierunkowy    & Dwukierunkowy   & Jednokierunkowy \\
+        \hline
+        Elastyczność   & Niska            & Wysoka          & Wysoka          \\
+        \hline
+    \end{tabular}
+    \caption{Porównanie technologii frontendowych}
+    \label{tab:frontend_comparison}
+\end{table}
+
+\textbf{Analiza alternatyw:}
 \begin{itemize}
-    \item \textbf{Komponentowość}: Łatwość tworzenia reużywalnych elementów interfejsu (np. formularz pola, modal konfiguracji).
-    \item \textbf{Wirtualny \gls{DOM}}: Wysoka wydajność przy renderowaniu dużych list, co jest kluczowe przy podglądzie wygenerowanych danych.
-    \item \textbf{Bogaty ekosystem}: Dostępność gotowych bibliotek \gls{UI} (m.in. Lucide React do ikon) przyspieszających tworzenie aplikacji.
+    \item \textbf{Angular}: Jest kompletnym rozwiązaniem typu ,,wszystko w jednym''. Choć oferuje gotowe narzędzia do większości zadań, narzuca sztywne ramy architektoniczne i wymaga znajomości TypeScript oraz biblioteki RxJS. Dla projektu, w którym priorytetem jest elastyczność i szybkość prototypowania, okazał się zbyt ciężki i skomplikowany.
+    \item \textbf{Vue.js}: Pod wieloma względami (np. wydajności) jest zbliżony do Reacta i posiada niższy próg wejścia. Jednak ekosystem Reacta, w tym dostępność gotowych komponentów integrujących się z nowoczesnymi narzędziami, jest znacznie bogatszy, co zadecydowało o jego odrzuceniu na korzyść Reacta.
 \end{itemize}
 
-Jako narzędzie budujące wybrano Vite zamiast starszego Webpacka, co zapewniło natychmiastowy start serwera deweloperskiego i szybsze czasy budowania wersji produkcyjnej.
+Ostatecznie wybrano React, kierując się następującymi atutami:
+\begin{itemize}
+    \item \textbf{Komponentowość}: Ułatwia budowanie skomplikowanych interfejsów z małych, niezależnych i reużywalnych części (np. formularz pola, modal konfiguracji).
+    \item \textbf{Wirtualny \gls{DOM}}: Zapewnia wysoką wydajność, minimalizując kosztowne operacje na rzeczywistym drzewie DOM, co jest kluczowe przy wyświetlaniu dużych zestawów wygenerowanych danych.
+    \item \textbf{Bogaty ekosystem}: Ogromna społeczność i dostępność gotowych bibliotek (takich jak Lucide React) znacząco przyspiesza proces budowania interfejsu.
+\end{itemize}
+
+Jako narzędzie budujące i środowisko uruchomieniowe wybrano \textbf{Vite} \cite{vite}, rezygnując z tradycyjnego rozwiązania jakim jest Webpack. Decyzja ta wynikała z fundamentalnych różnic w sposobie działania obu narzędzi:
+\begin{itemize}
+    \item \textbf{Szybkość startu}: Vite wykorzystuje natywne moduły ES\cite{es_modules} w przeglądarce, co pozwala na natychmiastowe uruchomienie serwera deweloperskiego, niezależnie od rozmiaru aplikacji. Webpack musi zbudować cały kod aplikacji przed startem.
+    \item \textbf{\gls{HMR}}: W Vite podmiana modułów następuje niemal natychmiastowo, co znacząco przyspiesza tworzenie aplikacji.
+    \item \textbf{Optymalizacja kodu}: Vite w trybie produkcyjnym wykorzystuje narzędzie Rollup\cite{rollup}, co pozwala na zaawansowane optymalizacje, takie jak \textit{tree-shaking} (usuwanie martwego kodu) oraz \textit{lazy loading} (dzielenie kodu na mniejsze fragmenty ładowane na żądanie). Dzięki temu finalny plik aplikacji jest mniejszy i ładuje się szybciej.
+\end{itemize}
 
 \section{Baza danych: PostgreSQL}
 Mimo że generowane dane mogą mieć różną strukturę, zdecydowano się na relacyjną bazę danych PostgreSQL \cite{postgresql} do przechowywania metadanych systemu (użytkownicy, projekty, historia zadań).

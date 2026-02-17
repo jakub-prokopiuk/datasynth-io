@@ -44,7 +44,7 @@ Testowano zachowanie systemu przy dużym obciążeniu zapytaniami do modelu jęz
 \begin{enumerate}
     \item Zdefiniowanie pola typu \texttt{llm} z promptem generującym opis produktu.
     \item Ustawienie liczby wierszy na 50.
-    \item \textbf{Obserwacja}: Czas generowania wyniósł średnio 1.5 sekundy na rekord przy użyciu modelu GPT-4o-mini. System poprawnie obsłużył asynchroniczność, nie blokując interfejsu użytkownika podczas oczekiwania na odpowiedź z \gls{API} OpenAI.
+    \item \textbf{Obserwacja}: Czas generowania wyniósł średnio 1.66 sekundy na rekord przy użyciu modelu GPT-4o-mini. System poprawnie obsłużył asynchroniczność, nie blokując interfejsu użytkownika podczas oczekiwania na odpowiedź z \gls{API} OpenAI.
 \end{enumerate}
 
 \section{Analiza wydajności}
@@ -74,7 +74,7 @@ W celu zapewnienia najwyższej jakości oprogramowania oraz weryfikacji integral
 
 Do realizacji testów \gls{E2E} wybrano framework Playwright. Jest on nowoczesnym narzędziem umożliwiającym automatyzację testów w wielu przeglądarkach (Chromium, Firefox, WebKit) oraz zapewniającym wysoką niezawodność dzięki mechanizmom automatycznego oczekiwania na elementy interfejsu.
 
-Zaimplementowany scenariusz testowy pokrywa kluczową ścieżkę krytyczną \cite{happy_path} użytkownika:
+Zaimplementowany scenariusz testowy pokrywa kluczową ścieżkę krytyczną\cite{happy_path} użytkownika:
 \begin{enumerate}
     \item \textbf{Autoryzacja}: Scenariusz rozpoczyna się od wejścia na stronę logowania. Automat testowy wprowadza dane uwierzytelniające administratora i weryfikuje poprawne przekierowanie do głównego widoku aplikacji.
     \item \textbf{Definicja schematu}: Wirtualny użytkownik dodaje nową tabelę o nazwie ,,users'' oraz konfiguruje jej strukturę, dodając kolumnę ,,name''. Test weryfikuje poprawność interakcji z formularzami oraz dynamiczne aktualizacje interfejsu.

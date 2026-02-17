@@ -95,7 +95,7 @@ Lewy panel (widoczny na Rysunku \ref{fig:main_view}) zawiera zestaw narzędzi ni
 \subsubsection*{1. Pasek narzędzi}
 W górnej części panelu znajduje się pasek narzędzi służący do zarządzania stanem całego projektu. Użytkownik ma tutaj dostęp do następujących funkcjonalności:
 \begin{itemize}
-    \item \textbf{Zarządzanie Projektami}: Przyciski umożliwiające zapisywanie i wczytywanie projektów z bazy danych.
+    \item \textbf{Zarządzanie projektami}: Przyciski umożliwiające zapisywanie i wczytywanie projektów z bazy danych.
     \item \textbf{Szablony (Templates)}: Dostęp do gotowych, predefiniowanych schematów danych.
     \item \textbf{Import/Eksport}: Możliwość zapisania schematu do lokalnego pliku \gls{JSON} oraz jego ponownego wczytania.
     \item \textbf{Wczytywanie przykładowych danych}: Opcja pozwalająca na szybkie załadowanie przykładowego schematu (np. ,,E-commerce''), co jest szczególnie przydatne dla nowych użytkowników.
@@ -269,7 +269,7 @@ while attempts < 10:
     
     attempts += 1
 \end{verbatim}
-Wzrost temperatury w kolejnych próbach zwiększa ,,kreatywność'' modelu, zmniejszając szansę na wygenerowanie duplikatu.
+Temperatura (\textit{temperature}) jest hiperparametrem kontrolującym losowość generowanych odpowiedzi \gls{LLM}. Wzrost temperatury w kolejnych próbach spłaszcza rozkład prawdopodobieństwa kolejnych słów, co zwiększa ,,kreatywność'' modelu i znacząco zmniejsza szansę na wygenerowanie duplikatu.
 
 \section{WebSocket}
 Do wizualizacji postępu w czasie rzeczywistym wykorzystano protokół WebSocket. Po nawiązaniu połączenia pod adresem \texttt{ws://server:8001/ws/jobs/\{job\_id\}}, serwer cyklicznie przesyła ramki \gls{JSON} o strukturze:
