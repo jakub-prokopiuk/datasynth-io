@@ -7,21 +7,22 @@ import uvicorn
 import asyncio
 import json
 import uuid
+import os
 from dotenv import load_dotenv
 
 from models import GeneratorRequest, ProjectCreate, ProjectSummary, PushToDbRequest
 from db_connector import DatabaseConnector
 from engine import DataEngine
 from exporters import DataExporter
-from database import init_db, get_db, ProjectDB, UserDB # Import UserDB
+from database import init_db, get_db, ProjectDB, UserDB
 from job_manager import job_manager
 from tasks import generate_dataset_task
-# Importy Auth
+
 from auth import get_current_user, create_access_token, verify_password, get_password_hash
 
 load_dotenv()
 
-# --- Funkcja tworząca domyślnego admina ---
+
 def create_default_user():
     db = next(get_db())
     user = db.query(UserDB).filter(UserDB.username == "admin").first()
@@ -36,7 +37,7 @@ def create_default_user():
 
 try:
     init_db()
-    create_default_user() # Tworzymy admina przy starcie
+    create_default_user()
 except Exception as e:
     print(f"Warning: DB init failed: {e}")
 
@@ -44,7 +45,7 @@ app = FastAPI(title="LLM Data Generator API", version="0.6.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -102,7 +103,7 @@ async def start_generation_job(request: GeneratorRequest, user: dict = Depends(g
     generate_dataset_task.delay(job_id, request.model_dump_json())
     return {"job_id": job_id, "status": "queued"}
 
-# TODO: Implement proper WebSocket authentication in production.
+
 @app.websocket("/ws/jobs/{job_id}")
 async def websocket_job_status(websocket: WebSocket, job_id: str):
     await websocket.accept()

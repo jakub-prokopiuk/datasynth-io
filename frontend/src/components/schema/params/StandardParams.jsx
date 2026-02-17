@@ -202,7 +202,7 @@ export function DistributionParams({ params, onChange }) {
                         <div className="relative w-20">
                             <input
                                 type="number"
-                                step="any" // Obsługa float
+                                step="any"
                                 value={val(weights[i])}
                                 onChange={(e) => handleUpdateWeight(i, e.target.value)}
                                 className={`w-full p-2 rounded border ${colors.border} bg-[#0d1117] text-white text-sm text-right pr-6 outline-none focus:border-blue-500 ${NO_SPINNER_CLASS}`}
@@ -225,7 +225,7 @@ export function DistributionParams({ params, onChange }) {
             <div className="flex justify-between items-center pt-2 border-t border-[#30363d] mt-2">
                 <div className={`text-[10px] flex items-center gap-1.5 ${isZero ? 'text-red-400' : (isExact ? 'text-green-500' : 'text-orange-400')}`}>
                     {isZero ? <XCircle size={12} /> : (isExact ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />)}
-                    <span className="font-bold">Total: {totalWeight.toFixed(2) /* Wyświetlamy max 2 miejsca po przecinku */}</span>
+                    <span className="font-bold">Total: {totalWeight.toFixed(2)}</span>
                 </div>
                 <button
                     onClick={handleAdd}

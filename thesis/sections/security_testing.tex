@@ -1,0 +1,20 @@
+\section{Testy bezpieczeństwa}
+W celu zapewnienia wysokiego poziomu bezpieczeństwa, przeprowadzono serię testów z wykorzystaniem narzędzi klasy \gls{SCA} oraz \gls{SAST}.
+
+\subsection{Analiza podatności zależności (\gls{SCA})}
+Do identyfikacji znanych podatności w wykorzystywanych bibliotekach użyto narzędzi \texttt{npm audit} (dla warstwy frontendowej) oraz \texttt{pip-audit} (dla warstwy backendowej).
+
+\begin{itemize}
+    \item \textbf{Frontend}: Analiza początkowo wykazała obecność podatności w bibliotece \texttt{axios} (wersja $\le$ 1.3.4). W ramach działań naprawczych, zaktualizowano bibliotekę do najnowszej stabilnej wersji, eliminując zidentyfikowane zagrożenia.
+    \item \textbf{Backend}: Audyt zależności Pythonowych nie wykazał krytycznych podatności w głównych bibliotekach produkcyjnych (FastAPI, Uvicorn, SQLAlchemy).
+\end{itemize}
+
+\subsection{Statyczna analiza kodu (SAST)}
+Kod źródłowy części serwerowej został poddany analizie przy użyciu narzędzia \textbf{Semgrep} \cite{semgrep}.
+Wykryto potencjalne zagrożenie w konfiguracji mechanizmu \gls{CORS}, polegające na zbyt szerokim uprawnieniu dostępu (\texttt{allow\_origins=["*"]}).
+Problem ten został rozwiązany poprzez wprowadzenie konfiguracji opartej na zmiennych środowiskowych, co pozwala na ścisłe zdefiniowanie zaufanych domen w środowisku produkcyjnym:
+\begin{verbatim}
+    allow_origins=os.getenv("ALLOWED_ORIGINS").split(",")
+\end{verbatim}
+
+

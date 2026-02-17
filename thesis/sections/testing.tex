@@ -36,7 +36,7 @@ Celem tego testu było sprawdzenie integralności relacyjnej generowanych danych
     \item Utworzenie tabeli \texttt{users} z polami \texttt{id}, \texttt{name}, \texttt{email}.
     \item Utworzenie tabeli \texttt{orders} z polem \texttt{user\_id} jako klucz obcy do tabeli \texttt{users}.
     \item Uruchomienie generowania dla 100 użytkowników i 500 zamówień.
-    \item \textbf{Weryfikacja}: Sprawdzenie, czy każde zamówienie przypisane jest do istniejącego użytkownika. Test zakończył się sukcesem – silnik poprawnie rozwiązał zależności w 100\% przypadków.
+    \item \textbf{Weryfikacja}: Sprawdzenie, czy każde zamówienie przypisane jest do istniejącego użytkownika. Test zakończył się sukcesem - silnik poprawnie rozwiązał zależności w 100\% przypadków.
 \end{enumerate}
 
 \subsection*{Scenariusz 2: Integracja z LLM}
@@ -44,7 +44,7 @@ Testowano zachowanie systemu przy dużym obciążeniu zapytaniami do modelu jęz
 \begin{enumerate}
     \item Zdefiniowanie pola typu \texttt{llm} z promptem generującym opis produktu.
     \item Ustawienie liczby wierszy na 50.
-    \item \textbf{Obserwacja}: Czas generowania wyniósł średnio 1.66 sekundy na rekord przy użyciu modelu GPT-4o-mini. System poprawnie obsłużył asynchroniczność, nie blokując interfejsu użytkownika podczas oczekiwania na odpowiedź z \gls{API} OpenAI.
+    \item \textbf{Obserwacja}: Początkowo czas generowania wyniósł średnio 1.66 sekundy na rekord przy użyciu modelu GPT-4o-mini, co przy większych zbiorach danych było wartością niesatysfakcjonującą. W celu optymalizacji wprowadzono mechanizm równoległego przetwarzania zapytań (\textit{batch processing}) z wykorzystaniem \texttt{asyncio.gather}. Po tej zmianie czas generowania serii 50 rekordów spadł do 11 sekund (ok. 0.22s na rekord), co stanowi ponad 7-krotne przyspieszenie. System poprawnie obsłużył asynchroniczność, nie blokując interfejsu użytkownika podczas oczekiwania na odpowiedź z \gls{API} OpenAI.
 \end{enumerate}
 
 \section{Analiza wydajności}
@@ -60,7 +60,7 @@ Przeprowadzono testy wydajnościowe mające na celu określenie limitów systemu
         \hline
         Proste                    & 10 000                  & 5.2s                  & -                         \\
         \hline
-        Złożone (z kontekstem AI) & 100                     & -                     & 145s                      \\
+        Złożone (z kontekstem AI) & 100                     & -                     & 23s                       \\
         \hline
     \end{tabular}
     \caption{Zestawienie czasów generowania danych}
@@ -84,3 +84,4 @@ Zaimplementowany scenariusz testowy pokrywa kluczową ścieżkę krytyczną\cite
 
 Dzięki zastosowaniu symulowania odpowiedzi backendu w niektórych testach, możliwe jest izolowane testowanie warstwy frontendowej, co przyspiesza proces deweloperski i uniezależnia testy interfejsu od dostępności zewnętrznych usług czy modeli \gls{LLM}. Takie podejście gwarantuje, że błędy w warstwie prezentacji są wykrywane natychmiastowo, zanim kod trafi na środowisko produkcyjne.
 
+\input{sections/security_testing.tex}
