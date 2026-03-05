@@ -19,7 +19,20 @@ def generate_dataset_task(self, job_id: str, request_json: str):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             
+        import time
+        start_time = time.time()
         db_path = loop.run_until_complete(engine.generate(request, job_id))
+        end_time = time.time()
+        
+        generation_time = end_time - start_time
+        total_rows = sum(t.rows_count for t in request.tables)
+        
+        with open("outputs/generation_times.csv", "a") as f:
+            # Start a file with simple CSV if we want to track it
+            import os
+            if not os.path.exists("outputs/generation_times.csv") or os.path.getsize("outputs/generation_times.csv") == 0:
+                f.write("job_id,total_rows,time_seconds\n")
+            f.write(f"{job_id},{total_rows},{generation_time:.4f}\n")
         
         config = req_dict.get("config", {})
         format_type = config.get("output_format", "json")
