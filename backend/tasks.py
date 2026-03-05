@@ -28,7 +28,6 @@ def generate_dataset_task(self, job_id: str, request_json: str):
         total_rows = sum(t.rows_count for t in request.tables)
         
         with open("outputs/generation_times.csv", "a") as f:
-            # Start a file with simple CSV if we want to track it
             import os
             if not os.path.exists("outputs/generation_times.csv") or os.path.getsize("outputs/generation_times.csv") == 0:
                 f.write("job_id,total_rows,time_seconds\n")
