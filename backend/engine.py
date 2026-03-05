@@ -151,12 +151,15 @@ class DataEngine:
         try:
             system_msg = "You are a synthetic data generator. Generate FICTIONAL, CREATIVE data. Output ONE single value."
             
+            import httpx
+            
             response = await active_client.chat.completions.create(
                 model=model,
                 messages=[{"role": "system", "content": system_msg}, {"role": "user", "content": formatted_prompt}],
                 temperature=temperature, 
                 max_tokens=150, 
-                top_p=top_p
+                top_p=top_p,
+                timeout=httpx.Timeout(60.0, read=60.0, write=10.0, connect=5.0)
             )
             return response.choices[0].message.content.strip().strip('"')
         except Exception as e: 
@@ -227,7 +230,8 @@ class DataEngine:
                         global_context=request.config.global_context,
                         unique_tracker=unique_tracker,
                         job_faker=job_faker,
-                        generated_tables_data=generated_tables_data
+                        generated_tables_data=generated_tables_data,
+                        job_id=job_id
                     ))
                 
                 batch_results = await asyncio.gather(*tasks)
@@ -254,7 +258,8 @@ class DataEngine:
         global_context: str, 
         unique_tracker: Dict[str, Set[Any]], 
         job_faker: Faker, 
-        generated_tables_data: Dict[str, List[Dict[str, Any]]]
+        generated_tables_data: Dict[str, List[Dict[str, Any]]],
+        job_id: str = None
     ) -> Dict[str, Any]:
         
         row_data = {}         
@@ -262,6 +267,8 @@ class DataEngine:
         if global_context: context_data["global_context"] = global_context
 
         for field in table.fields:
+            if job_id:
+                await job_manager.check_cancellation(job_id)
             max_retries = 10 
             attempts = 0
             final_value = None

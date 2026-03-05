@@ -1,0 +1,202 @@
+{
+    "config": {
+        "job_name": "Ecommerce DB with LLM Reviews",
+        "global_context": "An e-commerce store with customers, products, and reviews.",
+        "output_format": "json",
+        "locale": "en_US"
+    },
+    "tables": [
+        {
+            "id": "t1",
+            "name": "categories",
+            "rows_count": 10,
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "regex",
+                    "params": {
+                        "pattern": "CAT-[0-9]{4}"
+                    },
+                    "is_unique": true,
+                    "dependencies": []
+                },
+                {
+                    "name": "name",
+                    "type": "faker",
+                    "params": {
+                        "method": "word"
+                    },
+                    "is_unique": true,
+                    "dependencies": []
+                }
+            ]
+        },
+        {
+            "id": "t2",
+            "name": "customers",
+            "rows_count": 500,
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "regex",
+                    "params": {
+                        "pattern": "CUST-[0-9]{5}"
+                    },
+                    "is_unique": true,
+                    "dependencies": []
+                },
+                {
+                    "name": "first_name",
+                    "type": "faker",
+                    "params": {
+                        "method": "first_name"
+                    },
+                    "is_unique": false,
+                    "dependencies": []
+                },
+                {
+                    "name": "last_name",
+                    "type": "faker",
+                    "params": {
+                        "method": "last_name"
+                    },
+                    "is_unique": false,
+                    "dependencies": []
+                },
+                {
+                    "name": "email",
+                    "type": "faker",
+                    "params": {
+                        "method": "email"
+                    },
+                    "is_unique": true,
+                    "dependencies": []
+                },
+                {
+                    "name": "is_active",
+                    "type": "boolean",
+                    "params": {
+                        "probability": 85
+                    },
+                    "is_unique": false,
+                    "dependencies": []
+                }
+            ]
+        },
+        {
+            "id": "t3",
+            "name": "products",
+            "rows_count": 200,
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "regex",
+                    "params": {
+                        "pattern": "PROD-[0-9]{4}"
+                    },
+                    "is_unique": true,
+                    "dependencies": []
+                },
+                {
+                    "name": "category_id",
+                    "type": "foreign_key",
+                    "params": {
+                        "table_id": "t1",
+                        "column_name": "id"
+                    },
+                    "is_unique": false,
+                    "dependencies": []
+                },
+                {
+                    "name": "name",
+                    "type": "faker",
+                    "params": {
+                        "method": "catch_phrase"
+                    },
+                    "is_unique": false,
+                    "dependencies": []
+                },
+                {
+                    "name": "price",
+                    "type": "integer",
+                    "params": {
+                        "min": 10.0,
+                        "max": 1500.0
+                    },
+                    "is_unique": false,
+                    "dependencies": []
+                }
+            ]
+        },
+        {
+            "id": "t4",
+            "name": "reviews",
+            "rows_count": 10000,
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "regex",
+                    "params": {
+                        "pattern": "REV-[0-9]{6}"
+                    },
+                    "is_unique": true,
+                    "dependencies": []
+                },
+                {
+                    "name": "product_id",
+                    "type": "foreign_key",
+                    "params": {
+                        "table_id": "t3",
+                        "column_name": "id"
+                    },
+                    "is_unique": false,
+                    "dependencies": []
+                },
+                {
+                    "name": "customer_id",
+                    "type": "foreign_key",
+                    "params": {
+                        "table_id": "t2",
+                        "column_name": "id"
+                    },
+                    "is_unique": false,
+                    "dependencies": []
+                },
+                {
+                    "name": "rating",
+                    "type": "integer",
+                    "params": {
+                        "min": 1,
+                        "max": 5
+                    },
+                    "is_unique": false,
+                    "dependencies": []
+                },
+                {
+                    "name": "review_date",
+                    "type": "timestamp",
+                    "params": {
+                        "min_date": "-2y",
+                        "max_date": "now",
+                        "format": "iso"
+                    },
+                    "is_unique": false,
+                    "dependencies": []
+                },
+                {
+                    "name": "review_text",
+                    "type": "llm",
+                    "params": {
+                        "provider": "ollama",
+                        "model": "llama3",
+                        "prompt_template": "Write a short, realistic 1-2 sentence product review from a customer. The rating given is {rating} out of 5 stars. Keep it concise, natural, and realistic for an e-commerce platform. Output only the review text.",
+                        "temperature": 0.8,
+                        "top_p": 0.9
+                    },
+                    "is_unique": false,
+                    "dependencies": []
+                }
+            ]
+        }
+    ]
+}

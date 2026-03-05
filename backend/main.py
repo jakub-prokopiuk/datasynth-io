@@ -145,6 +145,14 @@ def get_job_result(job_id: str, user: dict = Depends(get_current_user)):
     if config.output_format == "json": return formatted_output
     else: return create_file_response(formatted_output, config)
 
+@app.delete("/jobs/{job_id}")
+def cancel_job_endpoint(job_id: str, user: dict = Depends(get_current_user)):
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    job_manager.cancel_job(job_id)
+    return {"status": "success", "message": "Job cancelled"}
+
 @app.post("/projects", response_model=ProjectSummary)
 def create_project(project: ProjectCreate, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
     schema_json = project.schema_data.model_dump()

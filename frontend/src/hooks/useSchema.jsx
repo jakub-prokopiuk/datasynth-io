@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function useSchema(initialTables) {
-    const [tables, setTables] = useState(initialTables);
-    const [activeTableId, setActiveTableId] = useState(initialTables[0]?.id || null);
+    const [tables, setTables] = useState(() => {
+        const saved = sessionStorage.getItem('datasynth_tables');
+        return saved ? JSON.parse(saved) : initialTables;
+    });
+    const [activeTableId, setActiveTableId] = useState(tables[0]?.id || null);
     const [editingIndex, setEditingIndex] = useState(null);
+
+    useEffect(() => {
+        sessionStorage.setItem('datasynth_tables', JSON.stringify(tables));
+    }, [tables]);
 
     const activeTable = tables.find(t => t.id === activeTableId) || tables[0];
     const activeFields = activeTable ? activeTable.fields : [];

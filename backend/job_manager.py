@@ -63,13 +63,24 @@ class RedisJobManager:
             "data": json.dumps(result_data)
         })
 
+    def cancel_job(self, job_id):
+        self.redis.hset(self._get_key(job_id), mapping={
+            "status": "cancelled"
+        })
+
     def fail_job(self, job_id, error_msg):
+        status = self.redis.hget(self._get_key(job_id), "status")
+        if status == "cancelled":
+            return
+            
         self.redis.hset(self._get_key(job_id), mapping={
             "status": "failed",
             "error": str(error_msg)
         })
         
     async def check_cancellation(self, job_id):
-        pass
+        status = self.redis.hget(self._get_key(job_id), "status")
+        if status == "cancelled":
+            raise Exception("Job was cancelled by the user.")
 
 job_manager = RedisJobManager()

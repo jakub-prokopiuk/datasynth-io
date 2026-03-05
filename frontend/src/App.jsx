@@ -18,12 +18,21 @@ import LoginPage from './components/LoginPage';
 import api from './lib/api';
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(() => {
+    // Migrate to sessionStorage, clear old localStorage token if exists
+    const oldToken = localStorage.getItem('token');
+    if (oldToken) {
+      localStorage.removeItem('token');
+      sessionStorage.setItem('token', oldToken);
+    }
+    return sessionStorage.getItem('token');
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState(null);
   const [generatedData, setGeneratedData] = useState(null);
   const [currentJobId, setCurrentJobId] = useState(null);
+  const [hasRestoredJob, setHasRestoredJob] = useState(false);
 
   const [modals, setModals] = useState({
     help: false,
@@ -34,12 +43,20 @@ function App() {
     push: false
   });
 
-  const [config, setConfig] = useState({
-    job_name: "E-commerce DB",
-    global_context: "Online store with users and orders.",
-    output_format: "json",
-    locale: "en_US"
+  const [config, setConfig] = useState(() => {
+    const saved = sessionStorage.getItem('datasynth_config');
+    if (saved) return JSON.parse(saved);
+    return {
+      job_name: "E-commerce DB",
+      global_context: "Online store with users and orders.",
+      output_format: "json",
+      locale: "en_US"
+    };
   });
+
+  useEffect(() => {
+    sessionStorage.setItem('datasynth_config', JSON.stringify(config));
+  }, [config]);
 
   const {
     tables,
@@ -59,12 +76,40 @@ function App() {
   ]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('datasynth_tables');
+    sessionStorage.removeItem('datasynth_config');
+    sessionStorage.removeItem('active_job');
+
+    const defaultTable = [{ id: "t_users", name: "users", rows_count: 10, fields: [] }];
+    setTables(defaultTable);
+    setActiveTableId("t_users");
+    setConfig({
+      job_name: "E-commerce DB",
+      global_context: "Online store with users and orders.",
+      output_format: "json",
+      locale: "en_US"
+    });
+
     setToken(null);
   };
 
+  useEffect(() => {
+    const handleAuthError = () => {
+      showToast('error', 'Session expired. Please log in again.');
+      handleLogout();
+    };
+
+    window.addEventListener('auth-error', handleAuthError);
+    return () => window.removeEventListener('auth-error', handleAuthError);
+  }, []);
+
   const toggleModal = (modalName, isOpen) => {
     setModals(prev => ({ ...prev, [modalName]: isOpen }));
+    if (modalName === 'generation' && !isOpen) {
+      sessionStorage.removeItem('active_job');
+      setCurrentJobId(null);
+    }
   };
 
   const showToast = (type, message) => {
@@ -77,6 +122,30 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+
+  useEffect(() => {
+    if (token && !hasRestoredJob) {
+      const savedJobJson = sessionStorage.getItem('active_job');
+      if (savedJobJson) {
+        try {
+          const savedJob = JSON.parse(savedJobJson);
+          if (savedJob.jobId) {
+            setConfig(prev => ({
+              ...prev,
+              job_name: savedJob.job_name || prev.job_name,
+              output_format: savedJob.output_format || prev.output_format
+            }));
+            setCurrentJobId(savedJob.jobId);
+            setModals(prev => ({ ...prev, generation: true }));
+          }
+        } catch (e) {
+          console.error("Failed to parse active_job from storage", e);
+          sessionStorage.removeItem('active_job');
+        }
+      }
+      setHasRestoredJob(true);
+    }
+  }, [token, hasRestoredJob]);
 
   const handleLoadTemplate = (template) => {
     setConfig({ ...config, ...template.config });
@@ -166,6 +235,13 @@ function App() {
       const jobId = response.data.job_id;
 
       setCurrentJobId(jobId);
+
+      sessionStorage.setItem('active_job', JSON.stringify({
+        jobId: jobId,
+        job_name: config.job_name,
+        output_format: config.output_format
+      }));
+
       toggleModal('generation', true);
 
     } catch (err) {
@@ -212,7 +288,10 @@ function App() {
   };
 
   if (!token) {
-    return <LoginPage onLogin={(newToken) => setToken(newToken)} />;
+    return <LoginPage onLogin={(newToken) => {
+      sessionStorage.setItem('token', newToken);
+      setToken(newToken);
+    }} />;
   }
 
   return (
