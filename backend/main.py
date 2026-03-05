@@ -69,38 +69,17 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 def read_root():
     return {"status": "ok", "message": "API Running (Protected)"}
 
-def format_generation_output(data: dict, config) -> Any:
-    format_type = config.output_format.lower()
-    if format_type == "json":
-        total_rows = sum(len(rows) for rows in data.values())
-        return {"status": "success", "job_name": config.job_name, "tables_count": len(data), "total_rows": total_rows, "data": data}
-    elif format_type == "csv": return DataExporter.to_csv_zip(data)
-    elif format_type == "sql": return DataExporter.to_sql(data)
-    else: raise ValueError("Unsupported output format")
-
-def create_file_response(content: Union[str, bytes], config) -> Response:
-    format_type = config.output_format.lower()
-    if format_type == "csv":
-        return Response(content=content, media_type="application/zip", headers={"Content-Disposition": f"attachment; filename={config.job_name}.zip"})
-    elif format_type == "sql":
-        file_name = config.job_name.replace(" ", "_").lower()
-        return Response(content=content, media_type="application/sql", headers={"Content-Disposition": f"attachment; filename={file_name}.sql"})
-    return content
 
 @app.post("/generate")
 async def generate_data_sync(request: GeneratorRequest, user: dict = Depends(get_current_user)):
-    try:
-        raw_data = await data_engine.generate(request)
-        formatted_output = format_generation_output(raw_data, request.config)
-        if request.config.output_format.lower() == "json": return formatted_output
-        else: return create_file_response(formatted_output, request.config)
-    except Exception as e: raise HTTPException(status_code=500, detail=str(e))
+    raise HTTPException(status_code=400, detail="Synchronous dataset generation is deprecated. Use /generate/async.")
 
 @app.post("/generate/async")
 async def start_generation_job(request: GeneratorRequest, user: dict = Depends(get_current_user)):
     job_id = str(uuid.uuid4())
     job_manager.create_job(job_id, request.model_dump())
-    generate_dataset_task.delay(job_id, request.model_dump_json())
+    task = generate_dataset_task.delay(job_id, request.model_dump_json())
+    job_manager.set_celery_task_id(job_id, task.id)
     return {"job_id": job_id, "status": "queued"}
 
 
@@ -133,23 +112,95 @@ async def websocket_job_status(websocket: WebSocket, job_id: str):
 def get_job_result(job_id: str, user: dict = Depends(get_current_user)):
     job = job_manager.get_job(job_id)
     if not job or job["status"] != "completed": raise HTTPException(status_code=400, detail="Job not ready")
-    raw_data = job["data"]
-    config_dict = job.get("config", {})
-    if "config" in config_dict: config_dict = config_dict["config"]
-    class ConfigShim:
-        def __init__(self, d):
-            self.output_format = d.get("output_format", "json")
-            self.job_name = d.get("job_name", "dataset")
-    config = ConfigShim(config_dict)
-    formatted_output = format_generation_output(raw_data, config)
-    if config.output_format == "json": return formatted_output
-    else: return create_file_response(formatted_output, config)
+    
+    data_str = job["data"]
+    try: result_info = json.loads(data_str)
+    except: result_info = data_str if isinstance(data_str, dict) else {}
+    
+    db_path = result_info.get("db_path")
+    if not db_path or not os.path.exists(db_path):
+        raise HTTPException(status_code=404, detail="Database file missing")
+        
+    config = job.get("config", {})
+    if "config" in config: config = config["config"]
+    format_type = config.get("output_format", "json")
+    
+    preview_data = {}
+    import sqlite3
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+        tables = [r[0] for r in cursor.fetchall()]
+        
+        for t in tables:
+            cursor.execute(f'SELECT * FROM "{t}" LIMIT 50')
+            headers = [d[0] for d in cursor.description] if cursor.description else []
+            headers = [h for h in headers if h != "_row_id"]
+            rows = cursor.fetchall()
+            parsed_rows = []
+            for row in rows:
+                r_dict = {}
+                for h in headers:
+                    v = row[h]
+                    try: r_dict[h] = json.loads(v) if v and isinstance(v, str) and (v.startswith('{') or v.startswith('[')) else v
+                    except: r_dict[h] = v
+                parsed_rows.append(r_dict)
+            preview_data[t] = parsed_rows
+
+    total_rows = job.get("total_rows", 0)
+    return {
+        "status": "success", 
+        "job_name": config.get("job_name", "dataset"),
+        "tables_count": len(tables),
+        "total_rows": total_rows,
+        "data": preview_data,
+        "preview": True
+    }
+
+from fastapi.responses import FileResponse
+
+@app.get("/jobs/{job_id}/download")
+def download_job_result(job_id: str, user: dict = Depends(get_current_user)):
+    job = job_manager.get_job(job_id)
+    if not job or job["status"] != "completed": raise HTTPException(status_code=400, detail="Job not ready")
+    
+    data_str = job["data"]
+    try: result_info = json.loads(data_str)
+    except: result_info = data_str if isinstance(data_str, dict) else {}
+    
+    export_path = result_info.get("export_path")
+    if not export_path or not os.path.exists(export_path):
+        raise HTTPException(status_code=404, detail="Export file missing")
+        
+    config = job.get("config", {})
+    if "config" in config: config = config["config"]
+    format_type = config.get("output_format", "json")
+    job_name = config.get("job_name", "dataset").replace(" ", "_").lower()
+    
+    ext = "zip" if format_type == "csv" else format_type
+    
+    media_type = "application/json"
+    if ext == "zip": media_type = "application/zip"
+    elif ext == "sql": media_type = "application/sql"
+    
+    return FileResponse(
+        path=export_path, 
+        media_type=media_type, 
+        filename=f"{job_name}.{ext}"
+    )
 
 @app.delete("/jobs/{job_id}")
 def cancel_job_endpoint(job_id: str, user: dict = Depends(get_current_user)):
     job = job_manager.get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+    
+    celery_task_id = job.get("celery_task_id")
+    if celery_task_id:
+        from celery_worker import celery_app
+        celery_app.control.revoke(celery_task_id, terminate=True, signal='SIGTERM')
+            
     job_manager.cancel_job(job_id)
     return {"status": "success", "message": "Job cancelled"}
 
@@ -190,9 +241,17 @@ def test_db_connection(payload: dict, user: dict = Depends(get_current_user)):
 async def push_to_database(payload: PushToDbRequest, user: dict = Depends(get_current_user)):
     job = job_manager.get_job(payload.job_id)
     if not job or job["status"] != "completed": raise HTTPException(status_code=400, detail="Job not completed")
-    raw_data = job["data"]
+    
+    data_str = job["data"]
+    try: result_info = json.loads(data_str)
+    except: result_info = data_str if isinstance(data_str, dict) else {}
+    db_path = result_info.get("db_path")
+    
+    if not db_path or not os.path.exists(db_path):
+        raise HTTPException(status_code=404, detail="Database file missing. Cannot push.")
+        
     try:
-        await asyncio.to_thread(DatabaseConnector.push_data, payload.connection_string, raw_data)
+        await asyncio.to_thread(DatabaseConnector.push_data, payload.connection_string, db_path)
         return {"status": "success", "message": "Pushed"}
     except Exception as e: raise HTTPException(status_code=500, detail=f"Push failed: {str(e)}")
 

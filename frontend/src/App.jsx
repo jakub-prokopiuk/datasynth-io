@@ -19,7 +19,6 @@ import api from './lib/api';
 
 function App() {
   const [token, setToken] = useState(() => {
-    // Migrate to sessionStorage, clear old localStorage token if exists
     const oldToken = localStorage.getItem('token');
     if (oldToken) {
       localStorage.removeItem('token');
@@ -32,6 +31,7 @@ function App() {
   const [notification, setNotification] = useState(null);
   const [generatedData, setGeneratedData] = useState(null);
   const [currentJobId, setCurrentJobId] = useState(null);
+  const [lastCompletedJobId, setLastCompletedJobId] = useState(null);
   const [hasRestoredJob, setHasRestoredJob] = useState(false);
 
   const [modals, setModals] = useState({
@@ -251,40 +251,34 @@ function App() {
 
   const handleJobComplete = async (jobId) => {
     try {
-      if (config.output_format === 'json') {
-        const response = await api.get(`/jobs/${jobId}/result`);
-        setGeneratedData(response.data);
-        toggleModal('generation', false);
-        showToast('success', "Data generated!");
-      } else {
-        const response = await api.get(`/jobs/${jobId}/result`, {
-          responseType: 'blob'
-        });
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        const ext = config.output_format === 'csv' ? 'zip' : 'sql';
-        link.setAttribute('download', `${config.job_name}.${ext}`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-
-        toggleModal('generation', false);
-        showToast('success', "File downloaded!");
-      }
+      const response = await api.get(`/jobs/${jobId}/result`);
+      setGeneratedData(response.data);
+      setLastCompletedJobId(jobId);
+      toggleModal('generation', false);
+      showToast('success', "Data generated! Displaying preview.");
     } catch (err) {
       showToast('error', "Failed to retrieve results.");
     }
   };
 
-  const downloadFile = () => {
-    if (!generatedData) return;
-    const blob = new Blob([JSON.stringify(generatedData.data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${config.job_name}.json`;
-    a.click();
+  const downloadFile = async () => {
+    if (!lastCompletedJobId) return;
+    try {
+      showToast('info', 'Downloading full dataset. Please wait...');
+      const response = await api.get(`/jobs/${lastCompletedJobId}/download`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      const ext = config.output_format === 'csv' ? 'zip' : config.output_format;
+      link.setAttribute('download', `${config.job_name}.${ext}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      showToast('error', "Download failed. It may have expired.");
+    }
   };
 
   if (!token) {
@@ -321,7 +315,7 @@ function App() {
       {modals.push && (
         <PushModal
           onClose={() => toggleModal('push', false)}
-          jobId={currentJobId}
+          jobId={lastCompletedJobId}
         />
       )}
 

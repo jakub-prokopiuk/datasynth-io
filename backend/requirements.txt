@@ -41,3 +41,4 @@ oracledb
 pytest
 httpx
 pytest-asyncio
+aiosqlite

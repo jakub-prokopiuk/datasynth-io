@@ -56,6 +56,9 @@ class RedisJobManager:
     def set_total(self, job_id, total):
         self.redis.hset(self._get_key(job_id), key="total_rows", value=total)
 
+    def set_celery_task_id(self, job_id, task_id):
+        self.redis.hset(self._get_key(job_id), key="celery_task_id", value=task_id)
+
     def complete_job(self, job_id, result_data):
         self.redis.hset(self._get_key(job_id), mapping={
             "status": "completed",

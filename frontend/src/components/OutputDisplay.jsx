@@ -86,8 +86,8 @@ function OutputDisplay({ loading, error, generatedData, config, onDownload, onPu
     const currentRows = (isStructuredData && activeTable) ? rawData[activeTable] : [];
     const previewRows = currentRows.slice(0, ROW_LIMIT);
     const headers = previewRows.length > 0 ? Object.keys(previewRows[0]) : [];
-    const wasTruncated = currentRows.length > ROW_LIMIT;
-    const totalRows = generatedData.total_rows || "Unknown";
+    const totalRows = generatedData.total_rows || 0;
+    const wasTruncated = totalRows > previewRows.length;
 
     return (
         <div className={`w-full md:w-7/12 lg:w-8/12 bg-[#0d1117] flex flex-col h-screen border-l ${colors.border}`}>

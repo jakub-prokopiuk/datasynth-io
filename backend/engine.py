@@ -8,6 +8,10 @@ from jinja2 import Environment, BaseLoader
 from unidecode import unidecode
 from job_manager import job_manager
 import asyncio
+import aiosqlite
+import json
+import uuid
+import os
 
 class DotAccessWrapper:
     def __init__(self, data: Dict[str, Any]):
@@ -103,19 +107,33 @@ class DataEngine:
         try: return random.choices(options, weights=weights, k=1)[0]
         except Exception as e: return f"Error: {str(e)}"
 
-    def _generate_foreign_key_value(self, params: Dict[str, Any], all_generated_data: Dict[str, List[Dict[str, Any]]], avoid_values: Set[Any] = None) -> Any:
+    async def _generate_foreign_key_value(self, params: Dict[str, Any], db: aiosqlite.Connection, table_id_to_name: Dict[str, str], avoid_values: Set[Any] = None) -> Any:
         target_table_id = params.get("table_id")
         target_column = params.get("column_name")
-        if not target_table_id or not target_column: return None 
-        if target_table_id not in all_generated_data: return None 
-        source_rows = all_generated_data[target_table_id]
-        if not source_rows: return None
-        available_rows = source_rows
+        if not target_table_id or not target_column or not db: return None 
+        
+        target_table_name = table_id_to_name.get(target_table_id, target_table_id)
+
+        query = f'SELECT "{target_column}" FROM "{target_table_name}"'
         if avoid_values:
-            available_rows = [row for row in source_rows if row.get(target_column) not in avoid_values]
-        if not available_rows: return "Error: No unique FK values left"
-        random_row = random.choice(available_rows)
-        return (random_row.get(target_column), random_row)
+            avoid_list = "','".join(str(v).replace("'", "''") for v in avoid_values)
+            query += f" WHERE \"{target_column}\" NOT IN ('{avoid_list}')"
+        query += " ORDER BY RANDOM() LIMIT 1"
+        
+        try:
+            async with db.execute(query) as cursor:
+                row = await cursor.fetchone()
+                if row:
+                    val = row[0]
+                    row_query = f'SELECT * FROM "{target_table_name}" WHERE "{target_column}" = ? LIMIT 1'
+                    async with db.execute(row_query, (val,)) as row_cursor:
+                        row_data = await row_cursor.fetchone()
+                        columns = [col[0] for col in row_cursor.description]
+                        parent_row = dict(zip(columns, row_data))
+                        return (val, parent_row)
+        except Exception as e:
+            print(f"FK Error: {e}")
+        return "Error: No unique FK values left"
 
     async def _generate_llm_value(self, params: Dict[str, Any], current_row_context: Dict[str, Any], avoid_values: Set[str] = None, retry_count: int = 0) -> str:
         provider = params.get("provider", "openai")
@@ -189,8 +207,7 @@ class DataEngine:
                 dependencies[t_id] = dependencies[t_id] - set(ready_tables)
         return ordered_tables
 
-    async def generate(self, request: GeneratorRequest, job_id: str = None) -> Dict[str, List[Dict[str, Any]]]:
-        generated_tables_data: Dict[str, List[Dict[str, Any]]] = {}
+    async def generate(self, request: GeneratorRequest, job_id: str = None) -> str:
         table_id_to_name = {t.id: t.name for t in request.tables}
         ordered_tables = self._resolve_generation_order(request.tables)
 
@@ -205,52 +222,76 @@ class DataEngine:
             job_manager.set_total(job_id, total_rows_to_gen)
             job_manager.update_progress(job_id, 0) 
 
-        for table in ordered_tables:
-            table_rows = []
-            unique_tracker: Dict[str, set] = {}
-            for field in table.fields:
-                if field.is_unique: unique_tracker[field.name] = set()
+        db_path = f"outputs/{job_id}.db" if job_id else f"outputs/temp_{uuid.uuid4().hex}.db"
 
-            rows_generated_for_table = 0
-            
-            BATCH_SIZE = 10
-
-            while rows_generated_for_table < table.rows_count:
-                if job_id:
-                    await job_manager.check_cancellation(job_id)
-                    await asyncio.sleep(0.01) 
-
-                remaining = table.rows_count - rows_generated_for_table
-                current_batch = min(BATCH_SIZE, remaining)
-
-                tasks = []
-                for _ in range(current_batch):
-                    tasks.append(self._generate_single_row(
-                        table=table,
-                        global_context=request.config.global_context,
-                        unique_tracker=unique_tracker,
-                        job_faker=job_faker,
-                        generated_tables_data=generated_tables_data,
-                        job_id=job_id
-                    ))
+        async with aiosqlite.connect(db_path) as db:
+            for table in ordered_tables:
+                columns_def = []
+                for field in table.fields:
+                    columns_def.append(f'"{field.name}" TEXT')
                 
-                batch_results = await asyncio.gather(*tasks)
-                table_rows.extend(batch_results)
-                
-                rows_generated_for_table += current_batch
-                current_rows_gen += current_batch
-                
-                if job_id and total_rows_to_gen > 0:
-                    percent = int((current_rows_gen / total_rows_to_gen) * 100)
-                    job_manager.update_progress(job_id, percent)
+                columns_str = ", ".join(columns_def)
+                create_query = f'CREATE TABLE IF NOT EXISTS "{table.name}" (_row_id INTEGER PRIMARY KEY AUTOINCREMENT, {columns_str})'
+                await db.execute(create_query)
+            await db.commit()
 
-            generated_tables_data[table.id] = table_rows
+            for table in ordered_tables:
+                unique_tracker: Dict[str, set] = {}
+                for field in table.fields:
+                    if field.is_unique: unique_tracker[field.name] = set()
 
-        final_output = {}
-        for t_id, rows in generated_tables_data.items():
-            t_name = table_id_to_name.get(t_id, t_id)
-            final_output[t_name] = rows
-        return final_output
+                rows_generated_for_table = 0
+                BATCH_SIZE = 10
+
+                while rows_generated_for_table < table.rows_count:
+                    if job_id:
+                        await job_manager.check_cancellation(job_id)
+                        await asyncio.sleep(0.01) 
+
+                    remaining = table.rows_count - rows_generated_for_table
+                    current_batch = min(BATCH_SIZE, remaining)
+
+                    tasks = []
+                    for _ in range(current_batch):
+                        tasks.append(self._generate_single_row(
+                            table=table,
+                            global_context=request.config.global_context,
+                            unique_tracker=unique_tracker,
+                            job_faker=job_faker,
+                            db=db,
+                            table_id_to_name=table_id_to_name,
+                            job_id=job_id
+                        ))
+                    
+                    batch_results = await asyncio.gather(*tasks)
+                    
+                    if batch_results:
+                        column_names = [field.name for field in table.fields]
+                        placeholders = ", ".join(["?"] * len(column_names))
+                        columns_joined = '", "'.join(column_names)
+                        insert_query = f'INSERT INTO "{table.name}" ("{columns_joined}") VALUES ({placeholders})'
+                        
+                        insert_data = []
+                        for row in batch_results:
+                            row_tuple = []
+                            for col in column_names:
+                                val = row.get(col)
+                                if isinstance(val, (dict, list)): val = json.dumps(val)
+                                else: val = str(val) if val is not None else None
+                                row_tuple.append(val)
+                            insert_data.append(tuple(row_tuple))
+                        
+                        await db.executemany(insert_query, insert_data)
+                        await db.commit()
+                    
+                    rows_generated_for_table += current_batch
+                    current_rows_gen += current_batch
+                    
+                    if job_id and total_rows_to_gen > 0:
+                        percent = int((current_rows_gen / total_rows_to_gen) * 100)
+                        job_manager.update_progress(job_id, percent)
+
+        return db_path
 
     async def _generate_single_row(
         self, 
@@ -258,7 +299,8 @@ class DataEngine:
         global_context: str, 
         unique_tracker: Dict[str, Set[Any]], 
         job_faker: Faker, 
-        generated_tables_data: Dict[str, List[Dict[str, Any]]],
+        db: aiosqlite.Connection,
+        table_id_to_name: Dict[str, str],
         job_id: str = None
     ) -> Dict[str, Any]:
         
@@ -281,7 +323,7 @@ class DataEngine:
                 if field.type == "faker": generated_val = self._generate_faker_value(field.params, job_faker)
                 elif field.type == "timestamp": generated_val = self._generate_timestamp_value(field.params, job_faker)
                 elif field.type == "foreign_key":
-                    result = self._generate_foreign_key_value(field.params, generated_tables_data, current_avoid_list)
+                    result = await self._generate_foreign_key_value(field.params, db, table_id_to_name, current_avoid_list)
                     if result and not isinstance(result, str):
                         val, parent_row = result
                         generated_val = val
