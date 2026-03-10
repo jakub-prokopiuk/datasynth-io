@@ -96,6 +96,8 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_NUM_PARALLEL=4
     # If you have an NVIDIA GPU and want to enable GPU support, uncomment the following lines
     # deploy:
     #   resources:

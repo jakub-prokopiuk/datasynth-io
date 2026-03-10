@@ -177,7 +177,7 @@ class DataEngine:
                 temperature=temperature, 
                 max_tokens=150, 
                 top_p=top_p,
-                timeout=httpx.Timeout(60.0, read=60.0, write=10.0, connect=5.0)
+                timeout=httpx.Timeout(600.0, read=600.0, write=10.0, connect=5.0)
             )
             return response.choices[0].message.content.strip().strip('"')
         except Exception as e: 
@@ -224,6 +224,8 @@ class DataEngine:
 
         db_path = f"outputs/{job_id}.db" if job_id else f"outputs/temp_{uuid.uuid4().hex}.db"
 
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
         async with aiosqlite.connect(db_path) as db:
             for table in ordered_tables:
                 columns_def = []
@@ -241,7 +243,7 @@ class DataEngine:
                     if field.is_unique: unique_tracker[field.name] = set()
 
                 rows_generated_for_table = 0
-                BATCH_SIZE = 10
+                BATCH_SIZE = 100
 
                 while rows_generated_for_table < table.rows_count:
                     if job_id:
