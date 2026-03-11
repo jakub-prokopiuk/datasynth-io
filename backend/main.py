@@ -88,6 +88,7 @@ async def websocket_job_status(websocket: WebSocket, job_id: str):
     await websocket.accept()
     try:
         last_progress = -1
+        last_status = ""
         while True:
             job = job_manager.get_job(job_id)
             if not job:
@@ -95,11 +96,12 @@ async def websocket_job_status(websocket: WebSocket, job_id: str):
                 break
             status = job.get("status")
             progress = job.get("progress", 0)
-            if progress != last_progress or status in ["completed", "failed"]:
+            if progress != last_progress or status != last_status:
                 response = {"job_id": job_id, "status": status, "progress": progress, "total_rows": job.get("total_rows", 0)}
                 if status == "failed": response["error"] = job.get("error")
                 await websocket.send_json(response)
                 last_progress = progress
+                last_status = status
             if status in ["completed", "failed"]: await websocket.close(); break
             await asyncio.sleep(0.5)
     except WebSocketDisconnect: pass

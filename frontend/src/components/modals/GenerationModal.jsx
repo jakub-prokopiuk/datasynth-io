@@ -59,7 +59,7 @@ function GenerationModal({ onClose, jobId, onComplete }) {
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-300">
             <div className={`w-full max-w-md bg-[#0d1117] border ${colors.border} rounded-xl shadow-2xl p-8 flex flex-col items-center text-center`}>
 
-                {status === "running" || status === "initializing" || status === "pending" ? (
+                {status === "generating" || status === "running" || status === "initializing" || status === "pending" ? (
                     <>
                         <h3 className="text-xl font-bold text-white mb-2">Generating Data...</h3>
                         <p className="text-gray-400 text-sm mb-6">Using AI context and Faker algorithms</p>

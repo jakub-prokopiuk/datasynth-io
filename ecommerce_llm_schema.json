@@ -131,7 +131,7 @@
         {
             "id": "t4",
             "name": "reviews",
-            "rows_count": 10000,
+            "rows_count": 100,
             "fields": [
                 {
                     "name": "id",

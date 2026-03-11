@@ -1,7 +1,7 @@
 from faker import Faker
 from typing import List, Dict, Any, Set, Union
 from models import GeneratorRequest
-from openai import OpenAI, AsyncOpenAI
+from openai import AsyncOpenAI
 import random
 import rstr
 from jinja2 import Environment, BaseLoader
@@ -12,6 +12,7 @@ import aiosqlite
 import json
 import uuid
 import os
+import httpx
 
 class DotAccessWrapper:
     def __init__(self, data: Dict[str, Any]):
@@ -26,7 +27,6 @@ class DotAccessWrapper:
 class DataEngine:
     def __init__(self):
         self.faker = Faker()
-        self.client = OpenAI() 
         self.jinja_env = Environment(loader=BaseLoader())
         
         def filter_slugify(value, separator="."):
@@ -135,6 +135,82 @@ class DataEngine:
             print(f"FK Error: {e}")
         return "Error: No unique FK values left"
 
+    async def _generate_llm_batch_value(
+        self, 
+        params: Dict[str, Any], 
+        contexts: List[Dict[str, Any]], 
+        retry_count: int = 0
+    ) -> List[str]:
+        if not contexts: return []
+        
+        provider = params.get("provider", "openai")
+        model = params.get("model", "gpt-4o-mini")
+        template = params.get("prompt_template", "")
+        
+        base_temp = float(params.get("temperature", 1.0))
+        top_p = float(params.get("top_p", 1.0))
+        
+        active_client = self.ollama_client if provider == "ollama" else self.openai_client
+        temperature = min(base_temp + (retry_count * 0.1), 1.5)
+        
+        if not template: return ["Error: No prompt_template"] * len(contexts)
+        
+        combined_prompts = []
+        for i, ctx in enumerate(contexts):
+            formatting_context = {k: DotAccessWrapper(v) if isinstance(v, dict) else v for k, v in ctx.items()}
+            try:
+                formatted = template.format(**formatting_context)
+                combined_prompts.append(f"Row {i+1}:\n{formatted}")
+            except Exception as e:
+                combined_prompts.append(f"Row {i+1}:\nError formatting prompt: {str(e)}")
+
+        joined_prompt = "\n\n---\n\n".join(combined_prompts)
+        
+        system_msg = (
+            "You are a synthetic data generator. Generate FICTIONAL, CREATIVE data. "
+            f"You MUST output exactly a JSON array of {len(contexts)} strings. "
+            "Do NOT output markdown blocks, just the raw JSON array. "
+            "Example: [\"review 1\", \"review 2\"]"
+        )
+        
+        try:
+            response = await active_client.chat.completions.create(
+                model=model,
+                messages=[{"role": "system", "content": system_msg}, {"role": "user", "content": joined_prompt}],
+                temperature=temperature, 
+                max_tokens=150 * len(contexts), 
+                top_p=top_p,
+                timeout=httpx.Timeout(600.0, read=600.0, write=10.0, connect=5.0)
+            )
+            
+            content = response.choices[0].message.content.strip()
+            if content.startswith("```json"): content = content[7:]
+            if content.startswith("```"): content = content[3:]
+            if content.endswith("```"): content = content[:-3]
+            content = content.strip()
+            
+            try:
+                parsed_array = json.loads(content)
+            except Exception as json_e:
+                print(f"LLM Batch JSON Parse Error: {str(json_e)}")
+                print(f"Raw Content from Ollama:\n{content}")
+                raise json_e
+            
+            if isinstance(parsed_array, list) and len(parsed_array) == len(contexts):
+                print(f"Generated {len(parsed_array)} rows via {provider}")
+                return [str(item) for item in parsed_array]
+            else:
+                print(f"Length mismatch ({len(parsed_array)} vs {len(contexts)}). Falling back.")
+                raise ValueError("Length mismatch")
+                
+        except Exception as e: 
+            print(f"Error ({str(e)}). Falling back to single-row generation.")
+            fallback_results = []
+            for ctx in contexts:
+                res = await self._generate_llm_value(params, ctx, retry_count=retry_count)
+                fallback_results.append(res)
+            return fallback_results
+
     async def _generate_llm_value(self, params: Dict[str, Any], current_row_context: Dict[str, Any], avoid_values: Set[str] = None, retry_count: int = 0) -> str:
         provider = params.get("provider", "openai")
         model = params.get("model", "gpt-4o-mini")
@@ -143,13 +219,7 @@ class DataEngine:
         base_temp = float(params.get("temperature", 1.0))
         top_p = float(params.get("top_p", 1.0))
         
-        if provider == "ollama":
-            active_client = AsyncOpenAI(
-                base_url="http://ollama:11434/v1",
-                api_key="ollama" 
-            )
-        else:
-            active_client = AsyncOpenAI()
+        active_client = self.ollama_client if provider == "ollama" else self.openai_client
         
         temperature = min(base_temp + (retry_count * 0.1), 1.5)
         
@@ -168,9 +238,6 @@ class DataEngine:
         except Exception as e: return f"Error formatting prompt: {str(e)}"
         try:
             system_msg = "You are a synthetic data generator. Generate FICTIONAL, CREATIVE data. Output ONE single value."
-            
-            import httpx
-            
             response = await active_client.chat.completions.create(
                 model=model,
                 messages=[{"role": "system", "content": system_msg}, {"role": "user", "content": formatted_prompt}],
@@ -218,7 +285,11 @@ class DataEngine:
         total_rows_to_gen = sum(t.rows_count for t in request.tables)
         current_rows_gen = 0
         
+        self.openai_client = AsyncOpenAI()
+        self.ollama_client = AsyncOpenAI(base_url="http://ollama:11434/v1", api_key="ollama")
+
         if job_id:
+            job_manager.set_status(job_id, "generating")
             job_manager.set_total(job_id, total_rows_to_gen)
             job_manager.update_progress(job_id, 0) 
 
@@ -243,7 +314,7 @@ class DataEngine:
                     if field.is_unique: unique_tracker[field.name] = set()
 
                 rows_generated_for_table = 0
-                BATCH_SIZE = 100
+                BATCH_SIZE = 20
 
                 while rows_generated_for_table < table.rows_count:
                     if job_id:
@@ -262,10 +333,39 @@ class DataEngine:
                             job_faker=job_faker,
                             db=db,
                             table_id_to_name=table_id_to_name,
-                            job_id=job_id
+                            job_id=job_id,
+                            skip_llm=True
                         ))
                     
                     batch_results = await asyncio.gather(*tasks)
+                    
+                    llm_fields = [f for f in table.fields if f.type == "llm"]
+                    if llm_fields and batch_results:
+                        sem = asyncio.Semaphore(4)
+                        
+                        for field in llm_fields:
+                            completed_count = 0
+                            
+                            async def generate_single_llm(row_data, field_params=field.params):
+                                nonlocal completed_count
+                                ctx = {k: v for k, v in row_data.items()}
+                                if request.config.global_context:
+                                    ctx["global_context"] = request.config.global_context
+                                async with sem:
+                                    result = await self._generate_llm_value(field_params, ctx)
+                                completed_count += 1
+                                if job_id and total_rows_to_gen > 0:
+                                    rows_so_far = current_rows_gen + completed_count
+                                    percent = int((rows_so_far / total_rows_to_gen) * 100)
+                                    job_manager.update_progress(job_id, percent)
+                                return result
+                            
+                            llm_results = await asyncio.gather(
+                                *[generate_single_llm(row) for row in batch_results]
+                            )
+                            
+                            for i, row in enumerate(batch_results):
+                                row[field.name] = llm_results[i]
                     
                     if batch_results:
                         column_names = [field.name for field in table.fields]
@@ -293,6 +393,9 @@ class DataEngine:
                         percent = int((current_rows_gen / total_rows_to_gen) * 100)
                         job_manager.update_progress(job_id, percent)
 
+        await self.openai_client.close()
+        await self.ollama_client.close()
+        
         return db_path
 
     async def _generate_single_row(
@@ -303,7 +406,8 @@ class DataEngine:
         job_faker: Faker, 
         db: aiosqlite.Connection,
         table_id_to_name: Dict[str, str],
-        job_id: str = None
+        job_id: str = None,
+        skip_llm: bool = False
     ) -> Dict[str, Any]:
         
         row_data = {}         
@@ -337,16 +441,24 @@ class DataEngine:
                 elif field.type == "regex": generated_val = self._generate_regex_value(field.params)
                 
                 elif field.type == "llm": 
+                    if skip_llm:
+                        final_value = None  
+                        break 
                     generated_val = await self._generate_llm_value(field.params, context_data, current_avoid_list, attempts)
                 
                 elif field.type == "template": generated_val = self._generate_template_value(field.params, context_data)
                 
                 if field.is_unique:
                     if generated_val not in unique_tracker[field.name] and "Error" not in str(generated_val):
-                        unique_tracker[field.name].add(generated_val)
-                        final_value = generated_val
-                        break
+                        if skip_llm and field.type == "llm":
+                            pass 
+                        else:
+                            unique_tracker[field.name].add(generated_val)
+                            final_value = generated_val
+                            break
                     else:
+                        if skip_llm and field.type == "llm":
+                            break 
                         attempts += 1
                         if field.type == "foreign_key" and "Error" in str(generated_val):
                             final_value = generated_val
