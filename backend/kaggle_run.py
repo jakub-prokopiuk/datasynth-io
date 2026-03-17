@@ -4,6 +4,7 @@ import json
 import os
 import aiosqlite
 import csv
+import time
 from engine import DataEngine
 from models import GeneratorRequest
 
@@ -42,16 +43,36 @@ async def main():
     request = GeneratorRequest(**schema_data)
     engine = DataEngine()
     
-    # Optional: If running on Kaggle with HuggingFace instead of Ollama,
-    # you could override the base URL here if needed. By default, it looks for Ollama on localhost.
-    
     print("Starting generation...")
-    # This will create outputs/{job_id}.db
+    start_time = time.time()
     db_path = await engine.generate(request, job_id=args.job_id)
-    print(f"Generation complete! Database saved to {db_path}")
+    total_time = time.time() - start_time
+    
+    print(f"Generation complete in {total_time:.2f} seconds! Database saved to {db_path}")
+
+    time_log_path = f"outputs/generation_times_{args.job_id or 'kaggle'}.txt"
+    with open(time_log_path, "w", encoding="utf-8") as f:
+        f.write(f"Total Generation Time: {total_time:.2f} seconds\n")
+        
+        total_rows = sum(t.rows_count for t in request.tables)
+        f.write(f"Total Rows Generated (all tables): {total_rows}\n")
+        
+        # Calculate time per LLM row (rough estimate if there's only one LLM table)
+        llm_rows = 0
+        for table in request.tables:
+            if any(field.type == 'llm' for field in table.fields):
+                llm_rows += table.rows_count
+        
+        if llm_rows > 0:
+            f.write(f"LLM Rows: {llm_rows}\n")
+            f.write(f"Average Time per LLM Row: {total_time / llm_rows:.2f} seconds\n")
+            f.write(f"SUB_BATCH_SIZE used: {os.environ.get('OLLAMA_SUB_BATCH_SIZE', '25 (default)')}\n")
+            f.write(f"MAX_CONCURRENT used: {os.environ.get('OLLAMA_MAX_CONCURRENT', '8 (default)')}\n")
+            
+    print(f"Timing results saved to {time_log_path}")
 
     if args.export_csv:
-        output_dir = f"outputs/{args.job_id}_csv"
+        output_dir = f"outputs/{args.job_id or 'kaggle'}_csv"
         await export_sqlite_to_csv(db_path, output_dir)
         print(f"All CSVs exported to {output_dir}")
 

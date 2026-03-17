@@ -163,8 +163,8 @@ class DataEngine:
         
         if not template: return ["Error: No prompt_template"] * len(contexts)
         
-        SUB_BATCH_SIZE = 10
-        MAX_CONCURRENT = 4
+        SUB_BATCH_SIZE = int(os.environ.get("OLLAMA_SUB_BATCH_SIZE", 25))
+        MAX_CONCURRENT = int(os.environ.get("OLLAMA_MAX_CONCURRENT", 8))
         sem = asyncio.Semaphore(MAX_CONCURRENT)
         
         async def _process_sub_batch(sub_contexts: List[Dict[str, Any]]) -> List[str]:
