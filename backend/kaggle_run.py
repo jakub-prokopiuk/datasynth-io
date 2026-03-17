@@ -40,10 +40,11 @@ async def main():
         schema_data = json.load(f)
     
     request = GeneratorRequest(**schema_data)
-    engine = DataEngine()
+    # By default, engine.py looks for Ollama on the Docker network (http://ollama:11434).
+    # Since we are running standalone, we override it here to localhost.
+    os.environ.setdefault("OLLAMA_API_URL", "http://localhost:11434/v1")
     
-    # Optional: If running on Kaggle with HuggingFace instead of Ollama,
-    # you could override the base URL here if needed. By default, it looks for Ollama on localhost.
+    engine = DataEngine()
     
     print("Starting generation...")
     # This will create outputs/{job_id}.db
