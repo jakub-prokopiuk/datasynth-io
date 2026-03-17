@@ -163,7 +163,7 @@ class DataEngine:
         
         if not template: return ["Error: No prompt_template"] * len(contexts)
         
-        SUB_BATCH_SIZE = int(os.environ.get("OLLAMA_SUB_BATCH_SIZE", 25))
+        SUB_BATCH_SIZE = int(os.environ.get("OLLAMA_SUB_BATCH_SIZE", 15))
         MAX_CONCURRENT = int(os.environ.get("OLLAMA_MAX_CONCURRENT", 8))
         sem = asyncio.Semaphore(MAX_CONCURRENT)
         
