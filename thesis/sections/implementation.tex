@@ -67,7 +67,7 @@ System implementuje mechanizm uwierzytelniania oparty na tokenach \gls{JWT} \cit
 Warstwa prezentacji została zrealizowana jako aplikacja typu Single Page Application (\gls{SPA}) przy użyciu biblioteki React. Do budowania projektu wykorzystano narzędzie Vite, a za stylowanie odpowiada framework Tailwind \gls{CSS}.
 
 \subsection*{Szczegółowy opis interfejsu}
-W dalszej części tego rozdziału przedstawiono kluczowe elementy interfejsu graficznego aplikacji. Interfejs został zaprojektowany w sposób minimalistyczny, z wykorzystaniem ciemnego motywu (Dark Mode), aby zapewnić komfort pracy przy długotrwałym użytkowaniu. Aplikacja jest w języku angielskim, co jest standardem w narzędziach deweloperskich.
+W dalszej części tego rozdziału przedstawiono kluczowe elementy interfejsu graficznego aplikacji. Interfejs został zaprojektowany w sposób minimalistyczny, z wykorzystaniem ciemnego motywu, aby zapewnić komfort pracy przy długotrwałym użytkowaniu. Aplikacja jest w języku angielskim, co jest standardem w narzędziach deweloperskich.
 
 \subsection*{Ekran logowania}
 Dostęp do systemu jest chroniony i wymaga uwierzytelnienia.
@@ -270,6 +270,9 @@ while attempts < 10:
     attempts += 1
 \end{verbatim}
 Temperatura (\textit{temperature}) jest hiperparametrem kontrolującym losowość generowanych odpowiedzi \gls{LLM}. Wzrost temperatury w kolejnych próbach spłaszcza rozkład prawdopodobieństwa kolejnych słów, co zwiększa ,,kreatywność'' modelu i znacząco zmniejsza szansę na wygenerowanie duplikatu.
+
+\subsubsection*{Przetwarzanie wsadowe (Batch Processing)}
+W celu optymalizacji wydajności generowania danych \gls{LLM}, zaimplementowano dwufazowy algorytm przetwarzania. W pierwszej fazie silnik generuje wszystkie pola deterministyczne (z parametrem \texttt{skip\_llm=True}), budując kontekst każdego wiersza. Następnie zebrane konteksty są przekazywane do metody \texttt{\_generate\_llm\_batch\_value}, która dzieli je na podpartie o stałym rozmiarze (\texttt{SUB\_BATCH\_SIZE}). Dla każdej podpartii formułowany jest zbiorczy prompt, a model jest instruowany, by zwrócił tablicę \gls{JSON} z odpowiedziami. Podpartie są przetwarzane współbieżnie z ograniczeniem przez \texttt{asyncio.Semaphore} (\texttt{MAX\_CONCURRENT} slotów). Szczegóły procesu optymalizacji i doboru parametrów opisano w Rozdziale~\ref{sec:llm_optimization}.
 
 \section{WebSocket}
 Do wizualizacji postępu w czasie rzeczywistym wykorzystano protokół WebSocket. Po nawiązaniu połączenia pod adresem \texttt{ws://server:8001/ws/jobs/\{job\_id\}}, serwer cyklicznie przesyła ramki \gls{JSON} o strukturze:

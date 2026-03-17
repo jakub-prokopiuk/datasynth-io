@@ -48,26 +48,29 @@ Testowano zachowanie systemu przy dużym obciążeniu zapytaniami do modelu jęz
 \end{enumerate}
 
 \section{Analiza wydajności}
-Przeprowadzono testy wydajnościowe mające na celu określenie limitów systemu. Testy wykonano na maszynie deweloperskiej (Procesor 8-rdzeniowy, 16GB \gls{RAM}) przy użyciu lokalnego modelu Ollama (Llama 3).
+Przeprowadzono testy wydajnościowe mające na celu określenie limitów systemu. Testy wykonano na laptopie deweloperskim z kartą graficzną NVIDIA RTX 5060, przy użyciu lokalnego modelu Ollama (Llama 3). Jako schemat testowy wykorzystano \texttt{ecommerce\_llm\_schema} zawierający 4 tabele, w tym tabelę recenzji z polem \texttt{review\_text} generowanym przez \gls{LLM}.
 
 \begin{table}[H]
     \centering
     \begin{tabular}{|l|c|c|c|}
         \hline
-        \textbf{Typ danych}       & \textbf{Liczba wierszy} & \textbf{Czas (Faker)} & \textbf{Czas (\gls{LLM})} \\
+        \textbf{Typ danych}       & \textbf{Liczba wierszy} & \textbf{Czas (Faker)} & \textbf{Czas (\gls{LLM})}   \\
         \hline
-        Proste (Imie, Adres)      & 1 000                   & 0.8s                  & -                         \\
+        Proste (Imię, Adres)      & 1\,000                  & 0,8s                  & --                          \\
         \hline
-        Proste                    & 10 000                  & 5.2s                  & -                         \\
+        Proste                    & 10\,000                 & 5,2s                  & --                          \\
         \hline
-        Złożone (z kontekstem AI) & 100                     & -                     & 23s                       \\
+        Złożone (z kontekstem AI) & 100                     & --                    & 52,24s (po optymalizacji)   \\
         \hline
+        Złożone (z kontekstem AI) & 10\,000                 & --                    & 8\,038s ($\approx$2h 14min) \\
+        \hline
+        % TODO: Uzupełnić wynikami testów na RTX 4060 Desktop
     \end{tabular}
     \caption{Zestawienie czasów generowania danych}
     \label{tab:performance_tests}
 \end{table}
 
-Jak widać w Tabeli \ref{tab:performance_tests}, generowanie danych przy użyciu algorytmów pseudolosowych (Faker) jest niezwykle szybkie i skalowalne liniowo. Wąskim gardłem systemu jest generowanie danych przy użyciu \gls{LLM}, co potwierdza słuszność decyzji o zastosowaniu przetwarzania asynchronicznego.
+Jak widać w Tabeli \ref{tab:performance_tests}, generowanie danych przy użyciu algorytmów pseudolosowych (Faker) jest niezwykle szybkie i skalowalne liniowo. Wąskim gardłem systemu jest generowanie danych przy użyciu \gls{LLM}, co potwierdza słuszność decyzji o zastosowaniu przetwarzania wsadowego z kontrolą współbieżności. Szczegółowy opis procesu optymalizacji algorytmu generowania opisano w Rozdziale~\ref{sec:llm_optimization}.
 
 \section{Testy End-to-End (\gls{E2E})}
 W celu zapewnienia najwyższej jakości oprogramowania oraz weryfikacji integralności całego systemu, wprowadzono kompleksowe testy typu \gls{E2E}. Testy te mają na celu symulację rzeczywistych scenariuszy użytkowania aplikacji, sprawdzając współpracę wszystkich komponentów systemu - od interfejsu użytkownika w przeglądarce, przez warstwę \gls{API}, aż po logikę biznesową i bazy danych.

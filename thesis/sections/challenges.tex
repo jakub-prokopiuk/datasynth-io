@@ -3,10 +3,10 @@
 Realizacja systemu łączącego deterministyczne generowanie danych z probabilistyczną naturą modeli językowych wiązała się z szeregiem wyzwań technicznych. W tym rozdziale omówiono napotkane problemy oraz zastosowane rozwiązania.
 
 \section{Zarządzanie stanem w środowisku asynchronicznym}
-Jednym z głównych wyzwań było zapewnienie spójności informacji o postępie generowania danych między backendem (Celery worker) a frontendem.
+Jednym z głównych wyzwań było zapewnienie spójności informacji o postępie generowania danych między backendem a frontendem.
 
 \subsection*{Problem}
-Protokół \gls{HTTP} jest bezstanowy, co utrudnia przesyłanie informacji o postępie (np. ,,45\% wykonano'') w czasie rzeczywistym. Początkowo rozważano technikę \textit{Long Polling}, jednak przy dużej liczbie jednoczesnych użytkowników generowałoby to nadmiarowy ruch sieciowy.
+Protokół \gls{HTTP} jest bezstanowy, co utrudnia przesyłanie informacji o postępie w czasie rzeczywistym. Początkowo rozważano technikę \textit{Long Polling}, jednak przy dużej liczbie jednoczesnych użytkowników generowałoby to nadmiarowy ruch sieciowy.
 
 \subsection*{Rozwiązanie}
 Zdecydowano się na implementację protokołu WebSocket. Backend uruchamia dedykowany endpoint \texttt{/ws/jobs/\{job\_id\}}, który nasłuchuje zdarzeń od menedżera zadań (\texttt{job\_manager.py}). Worker zapisuje postęp w pamięci współdzielonej (zmienna globalna w instancji serwera lub Redis), a wątek WebSocket cyklicznie (co 0.5s) odczytuje ten stan i wysyła go do klienta. Dzięki temu interfejs użytkownika jest płynny i responsywny.
@@ -29,7 +29,83 @@ W klasie \texttt{DataEngine} zaimplementowano hybrydowy mechanizm kontroli unika
 \section{Rozwiązywanie zależności cyklicznych}
 Obecna implementacja algorytmu sortowania topologicznego (\texttt{\_resolve\_generation\_order}) zakłada, że graf zależności między tabelami jest skierowanym grafem acyklicznym.
 
-W przypadku wystąpienia cyklu (np. Tabela A wymaga Tabeli B, a Tabela B wymaga Tabeli A), system nie jest w stanie ustalić kolejności generowania. Jest to znany problem w teorii baz danych. W ramach obecnej pracy przyjęto założenie, że użytkownik nie będzie tworzył cyklicznych zależności. W przyszłości planowane jest dodanie walidacji na etapie projektowania schematu, która wykrywałaby cykle i uniemożliwiała zapisanie takiej konfiguracji.
+W przypadku wystąpienia cyklu (np. Tabela A wymaga Tabeli B, a Tabela B wymaga Tabeli A), system nie jest w stanie ustalić kolejności generowania. W ramach obecnej pracy przyjęto założenie, że użytkownik nie będzie tworzył cyklicznych zależności. W przyszłości planowane jest dodanie walidacji na etapie projektowania schematu, która wykrywałaby cykle i uniemożliwiała zapisanie takiej konfiguracji.
+
+\section{Optymalizacja wydajności generowania danych z użyciem LLM}
+\label{sec:llm_optimization}
+
+Największym wyzwaniem wydajnościowym okazało się generowanie danych z wykorzystaniem lokalnego modelu językowego. W początkowej wersji systemu każde pole typu \texttt{llm} było obsługiwane sekwencyjnie -- silnik generował jeden wiersz, wysyłał zapytanie do Ollama, oczekiwał na odpowiedź, a dopiero potem przechodził do następnego wiersza. Takie podejście, choć poprawne funkcjonalnie, prowadziło do drastycznie niskiej przepustowości.
+
+\subsection*{Identyfikacja wąskiego gardła}
+Analiza profilu czasowego wykazała, że generowanie 100 rekordów zawierających pole \texttt{llm} (recenzje produktów generowane przez model Llama 3) zajmowało ponad 129 sekund przy podejściu sekwencyjnym. Czas oczekiwania na odpowiedź modelu stanowił ponad 95\% całkowitego czasu generowania, podczas gdy pola deterministyczne (Faker, Regex, Integer) były generowane niemal natychmiast. Każde zapytanie do modelu wymagało ok. 1,3 sekundy, a w trakcie oczekiwania na odpowiedź GPU i CPU pozostawały bezczynne.
+
+\subsection*{Optymalizacja: dwufazowe generowanie z przetwarzaniem wsadowym}
+W celu maksymalnego wykorzystania zasobów obliczeniowych karty graficznej, zaimplementowano dwufazowy algorytm generowania:
+
+\begin{enumerate}
+    \item \textbf{Faza 1 -- generowanie pól deterministycznych}: W pierwszej fazie silnik generuje wszystkie wiersze tabeli z pominięciem pól typu \texttt{llm} (parametr \texttt{skip\_llm=True}). Pola deterministyczne (Faker, Regex, Integer, Boolean, Timestamp, Foreign Key, Template, Distribution) są generowane bardzo szybko, tworząc kompletny kontekst wiersza potrzebny do sformułowania promptów \gls{LLM}.
+    \item \textbf{Faza 2 -- wsadowe generowanie pól LLM}: Zebrane konteksty wszystkich wierszy w partii są przekazywane do metody \texttt{\_generate\_llm\_batch\_value}, która realizuje przetwarzanie wsadowe.
+\end{enumerate}
+
+\subsection*{Mechanizm sub-batching z kontrolą współbieżności}
+Kluczowym elementem optymalizacji jest podział dużej partii wierszy na mniejsze podpartie (\textit{sub-batches}). Każda podpartia zawiera \texttt{SUB\_BATCH\_SIZE} wierszy, dla których formułowany jest jeden zbiorczy prompt. Model \gls{LLM} jest instruowany, aby zwrócić tablicę \gls{JSON} zawierającą dokładnie tyle odpowiedzi, ile wierszy zawiera podpartia. Takie podejście pozwala amortyzować narzut związany z inicjalizacją kontekstu modelu.
+
+Dodatkowo, wiele podpartii jest przetwarzanych równolegle z wykorzystaniem mechanizmu \texttt{asyncio.Semaphore}, który ogranicza liczbę jednoczesnych zapytań do wartości \texttt{MAX\_CONCURRENT}. Zapobiega to przeciążeniu serwera Ollama, jednocześnie umożliwiając przetwarzanie potokowe. W przypadku błędu podpartii (np. niepoprawna odpowiedź \gls{JSON}, niezgodna liczba elementów), system automatycznie stosuje mechanizm awaryjny, przetwarzając wiersze z nieudanej podpartii indywidualnie.
+
+\subsection*{Dostrajanie parametrów}
+W celu znalezienia optymalnej konfiguracji, przeprowadzono serię testów na schemacie \texttt{ecommerce\_llm\_schema}, zawierającym 4 tabele (łącznie 810 wierszy, w tym 100 recenzji generowanych przez \gls{LLM}). Testy wykonano na laptopie wyposażonym w kartę graficzną NVIDIA RTX 5060, z użyciem modelu Llama 3 uruchomionego lokalnie w kontenerze Ollama.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        \textbf{Próba} & \textbf{Czas [s]} & \textbf{Czas/wiersz LLM [s]} & \textbf{Opis konfiguracji}           \\
+        \hline
+        1              & 129,52            & 1,30                         & Generowanie sekwencyjne              \\
+        \hline
+        2              & 218,88            & 2,19                         & Nieoptymalna konfiguracja wsadowa    \\
+        \hline
+        3              & 63,43             & 0,63                         & Wprowadzenie sub-batching            \\
+        \hline
+        4              & 124,41            & 1,24                         & Testowanie alternatywnych parametrów \\
+        \hline
+        5              & 52,24             & 0,52                         & Optymalna konfiguracja               \\
+        \hline
+    \end{tabular}
+    \caption{Wyniki optymalizacji generowania 100 wierszy LLM (RTX 5060 Laptop)}
+    \label{tab:llm_optimization_100}
+\end{table}
+
+Jak widać w Tabeli \ref{tab:llm_optimization_100}, optymalna konfiguracja (próba 5) pozwoliła na osiągnięcie czasu 52,24~s, co stanowi \textbf{2,5-krotne przyspieszenie} względem podejścia sekwencyjnego (129,52~s). Warto zauważyć, że próba~2 wykazała regresję wydajności -- zbyt agresywna równoległość bez odpowiednich mechanizmów kontroli przepływu prowadziła do przeciążenia serwera Ollama.
+
+\subsection*{Skalowanie do dużych zbiorów danych}
+Aby zweryfikować skalowalność rozwiązania, przeprowadzono test generowania 10\,000 wierszy \gls{LLM} (łącznie 10\,710 wierszy w schemacie) z optymalną konfiguracją parametrów.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \textbf{Konfiguracja}        & \textbf{Wiersze LLM} & \textbf{Czas [s]} & \textbf{Czas/wiersz [s]} \\
+        \hline
+        Optymalna (RTX 5060 Laptop)  & 100                  & 52,24             & 0,52                     \\
+        \hline
+        Optymalna (RTX 5060 Laptop)  & 10\,000              & 8\,038,12         & 0,80                     \\
+        \hline
+        % TODO: Uzupełnić po przeprowadzeniu testów na RTX 4060
+        Optymalna (RTX 4060 Desktop) & 100                  & --                & --                       \\
+        \hline
+        Optymalna (RTX 4060 Desktop) & 10\,000+             & --                & --                       \\
+        \hline
+    \end{tabular}
+    \caption{Porównanie skalowalności generowania LLM na różnych konfiguracjach sprzętowych}
+    \label{tab:llm_scalability}
+\end{table}
+
+Generowanie 10\,000 recenzji zajęło 8\,038 sekund (ok. 2 godziny 14 minut). Średni czas na wiersz wzrósł z 0,52~s (100 wierszy) do 0,80~s (10\,000 wierszy), co sugeruje lekki wzrost narzutu przy dłuższych sesjach inferencji -- prawdopodobnie spowodowany rosnącym zużyciem pamięci GPU i termicznym throttlingiem laptopa. Mimo to, system skutecznie przetworzył cały zbiór bez awarii ani błędów krytycznych.
+
+% TODO: Po przeprowadzeniu testów na RTX 4060 Desktop, uzupełnić Tabelę \ref{tab:llm_scalability}
+% oraz dodać porównawczą analizę wydajności między platformami.
 
 \section{Obsługa błędów sieciowych}
-Integracja z \gls{API} OpenAI wiąże się z ryzykiem błędów sieciowych (timeouty, błędy 5xx po stronie dostawcy). Aby zapobiec przerwaniu całego procesu generowania przez błąd jednego rekordu, zastosowano bloki \texttt{try-except} wewnątrz pętli generującej. W przypadku błędu \gls{API}, system wstawia wartość zastępczą i kontynuuje pracę, zamiast przerywać całe zadanie. Użytkownik widzi te błędy w wynikowym zbiorze danych i może podjąć decyzję o ponownym wygenerowaniu.
+Integracja z \gls{API} modeli językowych wiąże się z ryzykiem błędów sieciowych (timeouty, błędy 5xx po stronie dostawcy). Aby zapobiec przerwaniu całego procesu generowania przez błąd jednego rekordu, zastosowano bloki \texttt{try-except} wewnątrz pętli generującej. W przypadku błędu \gls{API}, system przerywa próbę dla tego konkretnego wiersza i wstawia tekst błędu (np. \texttt{Ollama Error: timeout}) jako wartość pola, a następnie kontynuuje pracę nad kolejnymi wierszami. Dzięki temu błąd pojedynczego zapytania nie przerywa wielogodzinnego zadania. Użytkownik widzi te błędy w wynikowym zbiorze danych i po eksporcie może je odfiltrować z końcowego pliku, bąd\'z -- jeżeli skala błędów jest zbyt duża -- uruchomić generowanie całego zadania ponownie.
+
