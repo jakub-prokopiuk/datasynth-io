@@ -307,10 +307,8 @@ class DataEngine:
         current_rows_gen = 0
         
         self.openai_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY", "dummy_key_not_used"))
-        self.ollama_client = AsyncOpenAI(
-            base_url=os.environ.get("OLLAMA_API_URL", "http://ollama:11434/v1"), 
-            api_key="ollama"
-        )
+        ollama_host = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434/v1")
+        self.ollama_client = AsyncOpenAI(base_url=ollama_host, api_key="ollama")
 
         async def _safe_job_manager_call(method_name, *args):
             if hasattr(job_manager, method_name):
