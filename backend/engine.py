@@ -6,7 +6,15 @@ import random
 import rstr
 from jinja2 import Environment, BaseLoader
 from unidecode import unidecode
-from job_manager import job_manager
+try:
+    from job_manager import job_manager
+except ImportError:
+    class MockJobManager:
+        async def check_cancellation(self, job_id): pass
+        def set_status(self, job_id, status): pass
+        def set_total(self, job_id, total): pass
+        def update_progress(self, job_id, progress): pass
+    job_manager = MockJobManager()
 import asyncio
 import aiosqlite
 import json
@@ -298,14 +306,22 @@ class DataEngine:
         total_rows_to_gen = sum(t.rows_count for t in request.tables)
         current_rows_gen = 0
         
-        self.openai_client = AsyncOpenAI()
+        self.openai_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY", "dummy_key_not_used"))
         self.ollama_client = AsyncOpenAI(base_url="http://ollama:11434/v1", api_key="ollama")
 
-        if job_id:
-            job_manager.set_status(job_id, "generating")
-            job_manager.set_total(job_id, total_rows_to_gen)
-            job_manager.update_progress(job_id, 0) 
+        async def _safe_job_manager_call(method_name, *args):
+            if hasattr(job_manager, method_name):
+                func = getattr(job_manager, method_name)
+                if asyncio.iscoroutinefunction(func):
+                    await func(*args)
+                else:
+                    func(*args)
 
+        if job_id:
+            await _safe_job_manager_call("set_status", job_id, "generating")
+            await _safe_job_manager_call("set_total", job_id, total_rows_to_gen)
+            await _safe_job_manager_call("update_progress", job_id, 0)
+        
         db_path = f"outputs/{job_id}.db" if job_id else f"outputs/temp_{uuid.uuid4().hex}.db"
 
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -331,7 +347,7 @@ class DataEngine:
 
                 while rows_generated_for_table < table.rows_count:
                     if job_id:
-                        await job_manager.check_cancellation(job_id)
+                        await _safe_job_manager_call("check_cancellation", job_id)
                         await asyncio.sleep(0.01) 
 
                     remaining = table.rows_count - rows_generated_for_table
@@ -369,7 +385,7 @@ class DataEngine:
                             
                             if job_id and total_rows_to_gen > 0:
                                 percent = int((current_rows_gen + current_batch) / total_rows_to_gen * 100)
-                                job_manager.update_progress(job_id, percent)
+                                await _safe_job_manager_call("update_progress", job_id, percent)
                     
                     if batch_results:
                         column_names = [field.name for field in table.fields]
@@ -395,7 +411,7 @@ class DataEngine:
                     
                     if job_id and total_rows_to_gen > 0:
                         percent = int((current_rows_gen / total_rows_to_gen) * 100)
-                        job_manager.update_progress(job_id, percent)
+                        await _safe_job_manager_call("update_progress", job_id, percent)
 
         await self.openai_client.close()
         await self.ollama_client.close()
@@ -420,7 +436,15 @@ class DataEngine:
 
         for field in table.fields:
             if job_id:
-                await job_manager.check_cancellation(job_id)
+                # We need to access _safe_job_manager_call which is inside generate.
+                # Actually, check_cancellation isn't strictly necessary outside generate,
+                # but let's safely call job_manager directly if it has it, or just pass.
+                if hasattr(job_manager, "check_cancellation"):
+                    func = job_manager.check_cancellation
+                    if asyncio.iscoroutinefunction(func):
+                        await func(job_id)
+                    else:
+                        func(job_id)
             max_retries = 10 
             attempts = 0
             final_value = None
