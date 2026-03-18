@@ -1,111 +1,110 @@
 \chapter{Wyzwania i problemy implementacyjne}
 
-Realizacja systemu łączącego deterministyczne generowanie danych z probabilistyczną naturą modeli językowych wiązała się z szeregiem wyzwań technicznych. W tym rozdziale omówiono napotkane problemy oraz zastosowane rozwiązania.
+Stworzenie aplikacji łączącej konwencjonalne generowanie danych z wykorzystaniem modeli sztucznej inteligencji wiązało się z problemami. W tym rozdziale opisano napotkane trudności techniczne oraz sposoby ich rozwiązania.
 
-\section{Zarządzanie stanem w środowisku asynchronicznym}
-Jednym z głównych wyzwań było zapewnienie spójności informacji o postępie generowania danych między backendem a frontendem.
+\section{Informowanie użytkownika o postępie}
+Jednym z istotnych problemów na początku prac było płynne wyświetlanie paska postępu generowania na stronie internetowej, podczas gdy cały proces odbywał się w tle na serwerze.
 
-\subsection*{Problem}
-Protokół \gls{HTTP} jest bezstanowy, co utrudnia przesyłanie informacji o postępie w czasie rzeczywistym. Początkowo rozważano technikę \textit{Long Polling}, jednak przy dużej liczbie jednoczesnych użytkowników generowałoby to nadmiarowy ruch sieciowy.
+\subsection*{Problem z HTTP}
+Standardowe zapytania \gls{HTTP} nie sprawdzają się najlepiej w tym zastosowaniu, ponieważ przeglądarka musiałaby nieustannie pytać serwer o aktualny status. Przy większej liczbie użytkowników spowodowałoby to znaczne przeciążenie sieci.
 
 \subsection*{Rozwiązanie}
-Zdecydowano się na implementację protokołu WebSocket. Backend uruchamia dedykowany endpoint \texttt{/ws/jobs/\{job\_id\}}, który nasłuchuje zdarzeń od menedżera zadań (\texttt{job\_manager.py}). Worker zapisuje postęp w pamięci współdzielonej (zmienna globalna w instancji serwera lub Redis), a wątek WebSocket cyklicznie (co 0.5s) odczytuje ten stan i wysyła go do klienta. Dzięki temu interfejs użytkownika jest płynny i responsywny.
+Zdecydowano się na wykorzystanie protokołu WebSocket. W backendzie utworzono specjalny endpoint \texttt{/ws/jobs/\{job\_id\}}, do którego podłącza się aplikacja. Program działający w tle regularnie zapisuje swój postęp do pamięci współdzielonej, a połączenie WebSocket odczytuje te dane co pół sekundy i przesyła na bieżąco do przeglądarki. Dzięki temu interfejs działa responsywnie i płynnie aktualizuje pasek postępu.
 
-\section{Determinizm i unikalność przy zastosowaniu LLM}
-Modele językowe z natury są niedeterministyczne, co stanowi problem przy generowaniu pól, które muszą być unikalne (np. unikalne opisy produktów, numery seryjne generowane przez AI).
+\section{Wymuszanie unikalności danych z modelu LLM}
+Modele językowe charakteryzują się niedeterministycznym działaniem, co stanowiło wyzwanie w przypadku generowania kolumn, dla których zaznaczono wymóg unikalności (np. dla numerów seryjnych generowanych przez AI).
 
-\subsection*{Duplikaty}
-Podczas testów zauważono, że przy wysokiej temperaturze (parametr \texttt{temperature > 1.0}) modele mają tendencję do halucynacji formatu, a przy niskiej (bliskiej 0) często powtarzają te same frazy dla podobnych promptów wejściowych.
+\subsection*{Powtarzalność wyników}
+Podczas testów zauważono, że przy ustawieniu wysokiej ,,temperatury'' (parametr \texttt{temperature}) model często tracił kontekst i nie trzymał się narzuconego formatu. Z kolei przy niskiej temperaturze wykazywał tendencję do generowania tych samych słów i schematów.
 
-\subsection*{Implementacja mechanizmu ponowień}
-W klasie \texttt{DataEngine} zaimplementowano hybrydowy mechanizm kontroli unikalności:
+\subsection*{Mechanizm ponowień}
+Aby zapobiec powstawaniu duplikatów, zaimplementowano własny mechanizm weryfikacji:
 \begin{enumerate}
-    \item System utrzymuje zbiór wygenerowanych wartości dla każdego pola oznaczonego jako \texttt{UNIQUE}.
-    \item Przy każdej próbie wygenerowania wartości przez \gls{LLM}, sprawdzane jest, czy wartość już istnieje.
-    \item W przypadku kolizji, system ponawia próbę (do 10 razy), dynamicznie modyfikując prompt. Do promptu doklejana jest instrukcja: \texttt{CONSTRAINT: Value MUST be unique. DO NOT use: [lista ostatnich wartości]}.
-    \item Dodatkowo, przy każdym ponowieniu delikatnie zwiększana jest temperatura modelu (+0.1), aby wymusić większą różnorodność (,,kreatywność'') odpowiedzi.
+    \item Aplikacja zapisuje w pamięci listę wygenerowanych wartości dla danej unikalnej kolumny.
+    \item Przy każdej nowej odpowiedzi od sztucznej inteligencji następuje sprawdzenie, czy dana wartość nie została już wykorzystana.
+    \item W przypadku wykrycia duplikatu, system ponawia zapytanie (maksymalnie do 10 razy). Do promptu doklejana jest dodatkowa instrukcja: \texttt{CONSTRAINT: Value MUST be unique. DO NOT use: [lista wykorzystanych wartości]}.
+    \item Aby pomóc modelowi w znalezieniu nowej odpowiedzi, przy kolejnych próbach aplikacja delikatnie zwiększa parametr \texttt{temperature} (+0.1), co zachęca algorytm do większej różnorodności w doborach słów.
 \end{enumerate}
 
-\section{Rozwiązywanie zależności cyklicznych}
-Obecna implementacja algorytmu sortowania topologicznego (\texttt{\_resolve\_generation\_order}) zakłada, że graf zależności między tabelami jest skierowanym grafem acyklicznym.
+\section{Zależności cykliczne}
+Aplikacja sortuje tabele przed generowaniem, aby zapewnić odpowiednią kolejność ich tworzenia (np. najpierw użytkownicy, potem ich opinie). Problem pojawiał się, gdy Tabela A wymagała klucza z Tabeli B, a Tabela B jednocześnie wymagała klucza z Tabeli A.
 
-W przypadku wystąpienia cyklu (np. Tabela A wymaga Tabeli B, a Tabela B wymaga Tabeli A), system nie jest w stanie ustalić kolejności generowania. W ramach obecnej pracy przyjęto założenie, że użytkownik nie będzie tworzył cyklicznych zależności. W przyszłości planowane jest dodanie walidacji na etapie projektowania schematu, która wykrywałaby cykle i uniemożliwiała zapisanie takiej konfiguracji.
+Tworzył się wówczas tzw. cykl zależności, który zapętlał program. Na obecnym etapie przyjęto założenie, że użytkownik musi świadomie projektować strukturę bazy i unikać takich sytuacji w interfejsie. W przyszłości planowane jest dodanie dodatkowej walidacji, która blokowałaby zapis schematu w przypadku wykrycia ,,błędnego koła''.
 
-\section{Optymalizacja wydajności generowania danych z użyciem LLM}
+\section{Optymalizacja wydajności generowania przez modele lokalne}
 \label{sec:llm_optimization}
 
-Największym wyzwaniem wydajnościowym okazało się generowanie danych z wykorzystaniem lokalnego modelu językowego. W początkowej wersji systemu każde pole typu \texttt{llm} było obsługiwane sekwencyjnie -- silnik generował jeden wiersz, wysyłał zapytanie do Ollama, oczekiwał na odpowiedź, a dopiero potem przechodził do następnego wiersza. Takie podejście, choć poprawne funkcjonalnie, prowadziło do drastycznie niskiej przepustowości.
+Największym wyzwaniem dla wydajności systemu okazało się generowanie opisów przez lokalny model LLM. Początkowa wersja kodu zakładała przetwarzanie wierszy pojedynczo: program tworzył wiersz, wysyłał zapytanie do serwera Ollama, czekał na odpowiedź i dopiero wtedy przechodził do kolejnego rekordu. Rozwiązanie to było bardzo powolne.
 
-\subsection*{Identyfikacja wąskiego gardła}
-Analiza profilu czasowego wykazała, że generowanie 100 rekordów zawierających pole \texttt{llm} (recenzje produktów generowane przez model Llama 3) zajmowało ponad 129 sekund przy podejściu sekwencyjnym. Czas oczekiwania na odpowiedź modelu stanowił ponad 95\% całkowitego czasu generowania, podczas gdy pola deterministyczne (Faker, Regex, Integer) były generowane niemal natychmiast. Każde zapytanie do modelu wymagało ok. 1,3 sekundy, a w trakcie oczekiwania na odpowiedź GPU i CPU pozostawały bezczynne.
+\subsection*{Identyfikacja problemu}
+Pomiary wykazały, że wygenerowanie 100 recenzji produktów przez model Llama 3 zajmowało blisko 130 sekund. Prawie 95\% tego czasu stanowiło oczekiwanie na odpowiedź sztucznej inteligencji, podczas gdy zwykłe dane tekstowe (np. nazwiska z biblioteki Faker) generowały się w ułamki sekund. Czas oczekiwania na jeden rekord wynosił około 1.3 sekundy, a procesor oraz karta graficzna przez większość tego czasu nie były w pełni obciążone.
 
-\subsection*{Optymalizacja: dwufazowe generowanie z przetwarzaniem wsadowym}
-W celu maksymalnego wykorzystania zasobów obliczeniowych karty graficznej, zaimplementowano dwufazowy algorytm generowania:
+\subsection*{Rozwiązanie dwuetapowe}
+W celu lepszego wykorzystania zasobów obliczeniowych, wprowadzono algorytm dwufazowy:
 
 \begin{enumerate}
-    \item \textbf{Faza 1 -- generowanie pól deterministycznych}: W pierwszej fazie silnik generuje wszystkie wiersze tabeli z pominięciem pól typu \texttt{llm} (parametr \texttt{skip\_llm=True}). Pola deterministyczne (Faker, Regex, Integer, Boolean, Timestamp, Foreign Key, Template, Distribution) są generowane bardzo szybko, tworząc kompletny kontekst wiersza potrzebny do sformułowania promptów \gls{LLM}.
-    \item \textbf{Faza 2 -- wsadowe generowanie pól LLM}: Zebrane konteksty wszystkich wierszy w partii są przekazywane do metody \texttt{\_generate\_llm\_batch\_value}, która realizuje przetwarzanie wsadowe.
+    \item \textbf{Faza 1 -- dane proste}: W pierwszej kolejności aplikacja generuje wszystkie standardowe wiersze dla tabeli, całkowicie pomijając kolumny LLM. Działa to natychmiastowo i tworzy gotowe obiekty, które mogą posłużyć jako kontekst dla zapytań AI.
+    \item \textbf{Faza 2 -- grupowe zapytania LLM}: Zebrane konteksty są następnie przekazywane w paczkach do oddzielnej funkcji, która zajmuje się wyłącznie komunikacją z modelem.
 \end{enumerate}
 
-\subsection*{Mechanizm sub-batching z kontrolą współbieżności}
-Kluczowym elementem optymalizacji jest podział dużej partii wierszy na mniejsze podpartie (\textit{sub-batches}). Każda podpartia zawiera \texttt{SUB\_BATCH\_SIZE} wierszy, dla których formułowany jest jeden zbiorczy prompt. Model \gls{LLM} jest instruowany, aby zwrócić tablicę \gls{JSON} zawierającą dokładnie tyle odpowiedzi, ile wierszy zawiera podpartia. Takie podejście pozwala amortyzować narzut związany z inicjalizacją kontekstu modelu.
+\subsection*{Grupowanie zapytań}
+Kluczem do przyspieszenia procesu okazało się grupowanie zapytań w mniejsze pakiety. Zamiast wysyłać pojedynczy wiersz, program opiera się na parametrze \texttt{SUB\_BATCH\_SIZE} (domyślnie 15) i wysyła do modelu kilkanaście kontekstów w jednym dużym prompcie. W odpowiedzi model zwraca tekstową strukturę \gls{JSON} zawierającą od razu cały pakiet wyników. Znacznie skraca to narzut czasu potrzebny na wielokrotne inicjalizowanie zapytań przez silnik AI.
 
-Dodatkowo, wiele podpartii jest przetwarzanych równolegle z wykorzystaniem mechanizmu \texttt{asyncio.Semaphore}, który ogranicza liczbę jednoczesnych zapytań do wartości \texttt{MAX\_CONCURRENT}. Zapobiega to przeciążeniu serwera Ollama, jednocześnie umożliwiając przetwarzanie potokowe. W przypadku błędu podpartii (np. niepoprawna odpowiedź \gls{JSON}, niezgodna liczba elementów), system automatycznie stosuje mechanizm awaryjny, przetwarzając wiersze z nieudanej podpartii indywidualnie.
+Dodatkowo, zastosowano mechanizm \texttt{asyncio.Semaphore}, który zezwala serwerowi Ollama na przetwarzanie kilku takich paczek jednocześnie (domyślnie 8 zapytań w tle). Jeśli wystąpi błąd formatowania dla danej paczki (np. model pominie znak w odpowiedzi \gls{JSON}), to ten mały fragment uszkodzonych 15 wierszy jest wyłapywany i przerabiany bezpiecznym, pojedynczym zapytaniem jeden po drugim, by nie psuć całego postępu generowania.
 
-\subsection*{Dostrajanie parametrów}
-W celu znalezienia optymalnej konfiguracji, przeprowadzono serię testów na schemacie \texttt{ecommerce\_llm\_schema}, zawierającym 4 tabele (łącznie 810 wierszy, w tym 100 recenzji generowanych przez \gls{LLM}). Testy wykonano na laptopie wyposażonym w kartę graficzną NVIDIA RTX 5060, z użyciem modelu Llama 3 uruchomionego lokalnie w kontenerze Ollama.
+\subsection*{Testy wydajności}
+W celu dobrania optymalnych wielkości paczek przeprowadzono testy wydajnościowe. Jako stację wykorzystano laptopa z kartą graficzną NVIDIA RTX 5060, korzystając z modelu Llama 3 uruchomionego lokalnie w środowisku Ollama dla próbki 100 wierszy AI.
 
 \begin{table}[H]
     \centering
     \begin{tabular}{|c|c|c|c|}
         \hline
-        \textbf{Próba} & \textbf{Czas [s]} & \textbf{Czas/wiersz LLM [s]} & \textbf{Opis konfiguracji}           \\
+        \textbf{Numer próby} & \textbf{Czas [s]} & \textbf{Czas na 1 wiersz [s]} & \textbf{Zmiana w konfiguracji}       \\
         \hline
-        1              & 129,52            & 1,30                         & Generowanie sekwencyjne              \\
+        1                    & 129,52            & 1,30                          & Generowanie pojedyncze (sekwencyjne) \\
         \hline
-        2              & 218,88            & 2,19                         & Nieoptymalna konfiguracja wsadowa    \\
+        2                    & 218,88            & 2,19                          & Zbyt wysoka współbieżność zapytań    \\
         \hline
-        3              & 63,43             & 0,63                         & Wprowadzenie sub-batching            \\
+        3                    & 63,43             & 0,63                          & Implementacja pakietowania (batches) \\
         \hline
-        4              & 124,41            & 1,24                         & Testowanie alternatywnych parametrów \\
+        4                    & 124,41            & 1,24                          & Testowanie innych rozmiarów limitów  \\
         \hline
-        5              & 52,24             & 0,52                         & Optymalna konfiguracja               \\
+        5                    & 52,24             & 0,52                          & Optymalnie dopasowane parametry      \\
         \hline
     \end{tabular}
-    \caption{Wyniki optymalizacji generowania 100 wierszy LLM (RTX 5060 Laptop)}
+    \caption{Czasy generowania 100 wierszy AI na laptopie RTX 5060}
     \label{tab:llm_optimization_100}
 \end{table}
 
-Jak widać w Tabeli \ref{tab:llm_optimization_100}, optymalna konfiguracja (próba 5) pozwoliła na osiągnięcie czasu 52,24~s, co stanowi \textbf{2,5-krotne przyspieszenie} względem podejścia sekwencyjnego (129,52~s). Warto zauważyć, że próba~2 wykazała regresję wydajności -- zbyt agresywna równoległość bez odpowiednich mechanizmów kontroli przepływu prowadziła do przeciążenia serwera Ollama.
+Zgodnie z Tabelą \ref{tab:llm_optimization_100}, przy najlepiej dobranych parametrach udało się skrócić czas ze 130 sekund do około 52. Oznacza to blisko 2.5-krotne przyspieszenie skryptu bez negatywnego wpływu na złożoność całego programu. Zaobserwowano również, że zbyt wysokie ustawienie równoległych żądań (Próba 2) doprowadziło do przeciążenia API i drastycznego wydłużenia pracy.
 
-\subsection*{Skalowanie do dużych zbiorów danych}
-Aby zweryfikować skalowalność rozwiązania, przeprowadzono test generowania 10\,000 wierszy \gls{LLM} (łącznie 10\,710 wierszy w schemacie) z optymalną konfiguracją parametrów.
+\subsection*{Skalowalność dla dużych baz danych}
+Wykonano również próbę obciążeniową polegającą na wygenerowaniu dużej bazy danych zawierającej aż 10 000 wierszy przetworzonych przez LLM.
 
 \begin{table}[H]
     \centering
     \begin{tabular}{|l|c|c|c|}
         \hline
-        \textbf{Konfiguracja}        & \textbf{Wiersze LLM} & \textbf{Czas [s]} & \textbf{Czas/wiersz [s]} \\
+        \textbf{Środowisko testowe}     & \textbf{Ilość wierszy AI} & \textbf{Pełny czas [s]} & \textbf{Czas/wiersz [s]} \\
         \hline
-        Optymalna (RTX 5060 Laptop)  & 100                  & 52,24             & 0,52                     \\
+        Laptop (RTX 5060)               & 100                       & 52,24                   & 0,52                     \\
         \hline
-        Optymalna (RTX 5060 Laptop)  & 10\,000              & 8\,038,12         & 0,80                     \\
+        Laptop (RTX 5060)               & 10\,000                   & 8\,038,12               & 0,80                     \\
         \hline
-        % TODO: Uzupełnić po przeprowadzeniu testów na RTX 4060
-        Optymalna (RTX 4060 Desktop) & 100                  & --                & --                       \\
+        Środowisko Kaggle (2x Tesla T4) & 100                       & 178,02                  & 1,78                     \\
         \hline
-        Optymalna (RTX 4060 Desktop) & 10\,000+             & --                & --                       \\
+        Środowisko Kaggle (2x Tesla T4) & 10\,000                   & 14\,860,23              & 1,49                     \\
         \hline
     \end{tabular}
-    \caption{Porównanie skalowalności generowania LLM na różnych konfiguracjach sprzętowych}
+    \caption{Porównanie skalowalności w zależności od wybranego sprzętu}
     \label{tab:llm_scalability}
 \end{table}
 
-Generowanie 10\,000 recenzji zajęło 8\,038 sekund (ok. 2 godziny 14 minut). Średni czas na wiersz wzrósł z 0,52~s (100 wierszy) do 0,80~s (10\,000 wierszy), co sugeruje lekki wzrost narzutu przy dłuższych sesjach inferencji -- prawdopodobnie spowodowany rosnącym zużyciem pamięci GPU i termicznym throttlingiem laptopa. Mimo to, system skutecznie przetworzył cały zbiór bez awarii ani błędów krytycznych.
+Wygenerowanie 10\,000 wierszy na laptopie zajęło ponad 8038 sekund (nieco ponad 2 godziny). Długotrwałe obciążenie karty graficznej wiązało się ze zjawiskiem tzw. \textit{thermal throttlingu} (zabezpieczenie przed przegrzaniem obniżające taktowanie procesora), przez co średni czas utworzenia jednego wiersza wzrósł z 0,52 do 0,80 sekundy. Mimo to aplikacja zniosła ten test poprawnie i zapisała całą tabelę w pliku bazy SQLite.
 
-% TODO: Po przeprowadzeniu testów na RTX 4060 Desktop, uzupełnić Tabelę \ref{tab:llm_scalability}
-% oraz dodać porównawczą analizę wydajności między platformami.
+Dla porównania, ten sam schemat uruchomiono w darmowym środowisku chmurowym Kaggle, dysponującym dwoma kartami Tesla T4 (łącznie 32 GB pamięci VRAM). Już na próbce 100 wierszy czas wykonania okazał się znacznie gorszy (178 sekund wobec 52 sekund na laptopie). Zgodnie z oczekiwaniami, pełna próba 10\,000 wierszy na Kaggle zajęła jeszcze więcej~-- 14\,860 sekund (ponad 4 godziny), co jest wynikiem blisko dwukrotnie wolniejszym niż na laptopie. Co ciekawe, średni czas na wiersz w środowisku Kaggle spadł z 1,78~s (100 wierszy) do 1,49~s (10\,000 wierszy), co sugeruje, że przy dłuższych sesjach serwer Ollama lepiej amortyzuje narzut inicjalizacji kontekstu modelu. Na laptopie zaobserwowano odwrotną tendencję (wzrost z 0,52 do 0,80~s), co potwierdza wpływ \textit{thermal throttlingu} na laptopową kartę graficzną.
 
-\section{Obsługa błędów sieciowych}
-Integracja z \gls{API} modeli językowych wiąże się z ryzykiem błędów sieciowych (timeouty, błędy 5xx po stronie dostawcy). Aby zapobiec przerwaniu całego procesu generowania przez błąd jednego rekordu, zastosowano bloki \texttt{try-except} wewnątrz pętli generującej. W przypadku błędu \gls{API}, system przerywa próbę dla tego konkretnego wiersza i wstawia tekst błędu (np. \texttt{Ollama Error: timeout}) jako wartość pola, a następnie kontynuuje pracę nad kolejnymi wierszami. Dzięki temu błąd pojedynczego zapytania nie przerywa wielogodzinnego zadania. Użytkownik widzi te błędy w wynikowym zbiorze danych i po eksporcie może je odfiltrować z końcowego pliku, bąd\'z -- jeżeli skala błędów jest zbyt duża -- uruchomić generowanie całego zadania ponownie.
+Różnica wydajności między platformami wynika ze specyfikacji sprzętowych~-- karty Tesla T4 oparte są na architekturze Turing z 2018 roku, która nie posiada ulepszonych jednostek obliczeniowych obecnych w nowoczesnych kartach z serii RTX (architektura Ada Lovelace). Środowisko Kaggle sprawdza się natomiast do załadowania bardzo dużych modeli LLM w całości do pamięci, z czym domowe stacje robocze mogą mieć trudności ze względu na ograniczoną pojemność VRAM.
 
+\section{Odporność na błędy łączności z API}
+Komunikacja z zewnętrznymi interfejsami, takimi jak API usługi OpenAI, niesie ze sobą ryzyko sporadycznej utraty połączenia sieciowego lub przeciążeń po stronie dostawcy chmury. W kodzie serwera uodporniono wywołania API za pomocą precyzyjnych bloków wychwytywania wyjątków \texttt{try-except}. W przypadku wystąpienia \textit{timeoutu} (braku odpowiedzi sieciowej dla konkretnego zapytania), system nie odrzuca całego procesu po wielu godzinach pracy. Kod zachowuje odpowiedni tekst błędu (np. \texttt{Brak odpowiedzi od usługi OpenAI}) wpisując go bezpiecznie w odpowiednią komórkę bazy danych tabeli. Pozłwala to na płynne kontynuowanie generowania kolejnego wiersza uniemożliwiając restart skryptu, pozostawiając operatorowi wgląd do omyłkowego elementu tuż poprzez odpowiednie odnalezienie słowa błędu w ostatecznym arkuszu docelowym Excel bądź CSV.
