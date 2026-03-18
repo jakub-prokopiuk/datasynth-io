@@ -163,8 +163,8 @@ class DataEngine:
         
         if not template: return ["Error: No prompt_template"] * len(contexts)
         
-        SUB_BATCH_SIZE = int(os.environ.get("OLLAMA_SUB_BATCH_SIZE", 15))
-        MAX_CONCURRENT = int(os.environ.get("OLLAMA_MAX_CONCURRENT", 8))
+        SUB_BATCH_SIZE = int(os.environ.get("LLM_SUB_BATCH_SIZE", os.environ.get("OLLAMA_SUB_BATCH_SIZE", 15)))
+        MAX_CONCURRENT = int(os.environ.get("LLM_MAX_CONCURRENT", os.environ.get("OLLAMA_MAX_CONCURRENT", 8)))
         sem = asyncio.Semaphore(MAX_CONCURRENT)
         
         async def _process_sub_batch(sub_contexts: List[Dict[str, Any]]) -> List[str]:
@@ -307,8 +307,9 @@ class DataEngine:
         current_rows_gen = 0
         
         self.openai_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY", "dummy_key_not_used"))
-        ollama_host = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434/v1")
-        self.ollama_client = AsyncOpenAI(base_url=ollama_host, api_key="ollama")
+        llm_base_url = os.environ.get("LLM_BASE_URL", os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434/v1"))
+        llm_api_key = os.environ.get("LLM_API_KEY", "not-needed")
+        self.ollama_client = AsyncOpenAI(base_url=llm_base_url, api_key=llm_api_key)
 
         async def _safe_job_manager_call(method_name, *args):
             if hasattr(job_manager, method_name):
