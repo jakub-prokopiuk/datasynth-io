@@ -78,33 +78,57 @@ W celu dobrania optymalnych wielkości paczek przeprowadzono testy wydajnościow
 
 Zgodnie z Tabelą \ref{tab:llm_optimization_100}, przy najlepiej dobranych parametrach udało się skrócić czas ze 130 sekund do około 52. Oznacza to blisko 2.5-krotne przyspieszenie skryptu bez negatywnego wpływu na złożoność całego programu. Zaobserwowano również, że zbyt wysokie ustawienie równoległych żądań (Próba 2) doprowadziło do przeciążenia API i drastycznego wydłużenia pracy.
 
+\subsection*{Alternatywny silnik -- vLLM}
+
+Początkowe prace nad aplikacją oraz testy lokalne opierały się na serwerze Ollama \cite{ollama} -- narzędziu zaprojektowanym z myślą o prostocie obsługi i łatwym uruchamianiu modeli LLM na komputerach osobistych. Ollama wyróżnia się intuicyjnym interfejsem i prostym procesem instalacji, co doskonale sprawdza się przy deweloperskich eksperymentach. Jednakże w zastosowaniach chmurowych, wymagających dużej przepustowości i serwowania wielu równoczesnych zapytań, jego architektura nie oferuje optymalnej wydajności.
+
+W celu maksymalizacji prędkości generowania w środowisku chmurowym zdecydowano się przeprowadzić testy z wykorzystaniem vLLM \cite{vllm} -- biblioteki serwującej modele LLM, opracowanej na Uniwersytecie Kalifornijskim w Berkeley. vLLM różni się od Ollama podejściem architektonicznym: zamiast interfejsu zorientowanego na użytkownika końcowego, oferuje zaawansowany silnik zoptymalizowany pod kątem produkcyjnej wydajności i maksymalnego wykorzystania sprzętu.
+
+Kluczowym mechanizmem vLLM jest \textit{PagedAttention} -- algorytm zarządzania pamięcią GPU inspirowany mechanizmami stronicowania pamięci z systemów operacyjnych. Standardowe podejście do obsługi mechanizmu uwagi \cite{attention_ml} w modelach LLM wymaga alokacji ciągłego bloku pamięci dla każdego zapytania, co prowadzi do fragmentacji i marnotrawstwa zasobów GPU. PagedAttention dzieli pamięć kontekstu KV-cache (pamięć podręczna klucz-wartość) na małe, nieciągłe bloki, które mogą być dynamicznie przydzielane i zwalniane. Dzięki temu vLLM osiąga blisko optymalną utylizację pamięci karty graficznej i pozwala na obsługę znacznie większej liczby równoległych żądań.
+
+Drugą istotną zaletą jest mechanizm \textit{continuous batching}, który dynamicznie łączy napływające zapytania w czasie rzeczywistym, bez konieczności czekania na skompletowanie całej paczki. Pozwala to na pełniejsze wykorzystanie mocy obliczeniowej kart GPU, gdyż silnik nieustannie przetwarza kolejne tokeny z różnych zapytań zamiast pozostawać bezczynny między kolejnymi żądaniami.
+
+\subsection*{Konfiguracja vLLM na platformie Kaggle}
+
+Wdrożenie vLLM w środowisku Kaggle wymagało rozwiązania dodatkowych problemów środowiskowych. Domyślna wersja vLLM (0.17) korzysta z biblioteki FlashInfer, która wymaga kompilacji kerneli CUDA w czasie wykonywania programu. System plików Kaggle, będący w dużej części środowiskiem tylko do odczytu, uniemożliwiał tę kompilację, powodując błędy budowania oprogramowania.
+
+Rozwiązaniem okazało się zastosowanie starszej wersji vLLM (0.6.6), która zamiast FlashInfer wykorzystuje bibliotekę xFormers \cite{xformers}. xFormers dostarcza prekompilowane, wydajne implementacje operacji uwagi, co eliminuje konieczność kompilacji kerneli CUDA w czasie uruchamiania serwera.
+
+Model Llama 3 8B-Instruct uruchomiono z podziałem tensorów na dwie karty Tesla T4 (\texttt{tensor-parallel-size=2}), co pozwoliło na wykorzystanie łącznie 32 GB pamięci VRAM. Aplikacja, dzięki oparciu komunikacji na standardzie OpenAI API, wymagała jedynie zmiany adresu URL serwera modelu oraz wyłączenia sztucznego podziału na paczki -- dotychczasowy interfejs i cała logika przetwarzania po stronie backendu pozostały niezmienione, delegując pełne zarządzanie ruchem do silnika vLLM.
+
 \subsection*{Skalowalność dla dużych baz danych}
-Wykonano również próbę obciążeniową polegającą na wygenerowaniu dużej bazy danych zawierającej aż 10 000 wierszy przetworzonych przez LLM.
+
+W celu ostatecznego porównania wydajności wykonano próbę obciążeniową polegającą na wygenerowaniu dużej bazy danych zawierającej aż 10\,000 wierszy przetworzonych przez LLM. Testy przeprowadzono na dwóch platformach sprzętowych oraz z dwoma silnikami inferencji (Ollama i vLLM).
 
 \begin{table}[H]
     \centering
-    \begin{tabular}{|l|c|c|c|}
+    \begin{tabular}{|l|l|c|c|c|}
         \hline
-        \textbf{Środowisko testowe}     & \textbf{Ilość wierszy AI} & \textbf{Pełny czas [s]} & \textbf{Czas/wiersz [s]} \\
+        \textbf{Środowisko testowe} & \textbf{Silnik} & \textbf{Wierszy AI} & \textbf{Czas [s]} & \textbf{Czas/wiersz [s]} \\
         \hline
-        Laptop (RTX 5060)               & 100                       & 52,24                   & 0,52                     \\
+        Laptop (RTX 5060)           & Ollama          & 100                 & 52,24             & 0,52                     \\
         \hline
-        Laptop (RTX 5060)               & 10\,000                   & 8\,038,12               & 0,80                     \\
+        Laptop (RTX 5060)           & Ollama          & 10\,000             & 8\,038,12         & 0,80                     \\
         \hline
-        Środowisko Kaggle (2x Tesla T4) & 100                       & 178,02                  & 1,78                     \\
+        Kaggle (2x Tesla T4)        & Ollama          & 100                 & 178,02            & 1,78                     \\
         \hline
-        Środowisko Kaggle (2x Tesla T4) & 10\,000                   & 14\,860,23              & 1,49                     \\
+        Kaggle (2x Tesla T4)        & Ollama          & 10\,000             & 14\,860,23        & 1,49                     \\
+        \hline
+        Kaggle (2x Tesla T4)        & vLLM            & 100                 & 18,30             & 0,18                     \\
+        \hline
+        Kaggle (2x Tesla T4)        & vLLM            & 10\,000             & 1\,693,50         & 0,17                     \\
         \hline
     \end{tabular}
-    \caption{Porównanie skalowalności w zależności od wybranego sprzętu}
+    \caption{Porównanie skalowalności w zależności od sprzętu i silnika}
     \label{tab:llm_scalability}
 \end{table}
 
-Wygenerowanie 10\,000 wierszy na laptopie zajęło ponad 8038 sekund (nieco ponad 2 godziny). Długotrwałe obciążenie karty graficznej wiązało się ze zjawiskiem tzw. \textit{thermal throttlingu} (zabezpieczenie przed przegrzaniem obniżające taktowanie procesora), przez co średni czas utworzenia jednego wiersza wzrósł z 0,52 do 0,80 sekundy. Mimo to aplikacja zniosła ten test poprawnie i zapisała całą tabelę w pliku bazy SQLite.
+Wygenerowanie 10\,000 wierszy na laptopie z serwerem Ollama zajęło ponad 8\,038 sekund (nieco ponad 2 godziny). Długotrwałe obciążenie karty graficznej wiązało się ze zjawiskiem tzw. \textit{thermal throttlingu} (zabezpieczenie przed przegrzaniem obniżające taktowanie procesora), przez co średni czas utworzenia jednego wiersza wzrósł z 0,52 do 0,80 sekundy. Mimo to aplikacja zniosła ten test poprawnie i zapisała całą tabelę w pliku bazy SQLite.
 
-Dla porównania, ten sam schemat uruchomiono w darmowym środowisku chmurowym Kaggle, dysponującym dwoma kartami Tesla T4 (łącznie 32 GB pamięci VRAM). Już na próbce 100 wierszy czas wykonania okazał się znacznie gorszy (178 sekund wobec 52 sekund na laptopie). Zgodnie z oczekiwaniami, pełna próba 10\,000 wierszy na Kaggle zajęła jeszcze więcej~-- 14\,860 sekund (ponad 4 godziny), co jest wynikiem blisko dwukrotnie wolniejszym niż na laptopie. Co ciekawe, średni czas na wiersz w środowisku Kaggle spadł z 1,78~s (100 wierszy) do 1,49~s (10\,000 wierszy), co sugeruje, że przy dłuższych sesjach serwer Ollama lepiej amortyzuje narzut inicjalizacji kontekstu modelu. Na laptopie zaobserwowano odwrotną tendencję (wzrost z 0,52 do 0,80~s), co potwierdza wpływ \textit{thermal throttlingu} na laptopową kartę graficzną.
+Dla porównania, ten sam schemat z serwerem Ollama uruchomiono w darmowym środowisku chmurowym Kaggle, dysponującym dwoma kartami Tesla T4 (łącznie 32 GB pamięci VRAM). Pełna próba 10\,000 wierszy na Kaggle zajęła aż 14\,860 sekund (ponad 4 godziny). Różnica wydajności względem laptopa wynika ze specyfikacji sprzętowych -- karty Tesla T4 oparte są na architekturze Turing \cite{turing_microarchitecture} z 2018 roku, która nie posiada ulepszonych jednostek obliczeniowych obecnych w nowoczesnych kartach z serii RTX (architektura Ada Lovelace \cite{ada_lovelace_microarchitecture}).
 
-Różnica wydajności między platformami wynika ze specyfikacji sprzętowych~-- karty Tesla T4 oparte są na architekturze Turing z 2018 roku, która nie posiada ulepszonych jednostek obliczeniowych obecnych w nowoczesnych kartach z serii RTX (architektura Ada Lovelace). Środowisko Kaggle sprawdza się natomiast do załadowania bardzo dużych modeli LLM w całości do pamięci, z czym domowe stacje robocze mogą mieć trudności ze względu na ograniczoną pojemność VRAM.
+Zastąpienie serwera Ollama przez vLLM na tej samej platformie Kaggle przyniosło drastyczną poprawę wydajności. Generowanie 100 wierszy AI skróciło się ze 178 do zaledwie 18,3 sekundy (przyspieszenie blisko 10-krotne), a pełna próba 10\,000 wierszy ze 14\,860 do 1\,693 sekund (około 28 minut zamiast ponad 4 godzin) -- przyspieszenie blisko 9-krotne. Co więcej, średni czas na wiersz z vLLM (0,17 s) okazał się ponad 4-krotnie lepszy niż najlepsza lokalna konfiguracja Ollama na nowszym laptopie RTX 5060 (0,52s). Wynik ten potwierdza, że mechanizmy PagedAttention i \textit{continuous batching} zaimplementowane w vLLM pozwalają na znacznie efektywniejsze wykorzystanie chmurowych zasobów GPU niż tradycyjne podejście serwera Ollama.
 
 \section{Odporność na błędy łączności z API}
-Komunikacja z zewnętrznymi interfejsami, takimi jak API usługi OpenAI, niesie ze sobą ryzyko sporadycznej utraty połączenia sieciowego lub przeciążeń po stronie dostawcy chmury. W kodzie serwera uodporniono wywołania API za pomocą precyzyjnych bloków wychwytywania wyjątków \texttt{try-except}. W przypadku wystąpienia \textit{timeoutu} (braku odpowiedzi sieciowej dla konkretnego zapytania), system nie odrzuca całego procesu po wielu godzinach pracy. Kod zachowuje odpowiedni tekst błędu (np. \texttt{Brak odpowiedzi od usługi OpenAI}) wpisując go bezpiecznie w odpowiednią komórkę bazy danych tabeli. Pozłwala to na płynne kontynuowanie generowania kolejnego wiersza uniemożliwiając restart skryptu, pozostawiając operatorowi wgląd do omyłkowego elementu tuż poprzez odpowiednie odnalezienie słowa błędu w ostatecznym arkuszu docelowym Excel bądź CSV.
+Komunikacja z zewnętrznymi interfejsami, takimi jak API usługi OpenAI, niesie ze sobą ryzyko sporadycznej utraty połączenia sieciowego lub przeciążeń po stronie dostawcy chmury. W kodzie serwera uodporniono wywołania API za pomocą precyzyjnych bloków wychwytywania wyjątków \texttt{try-except}. W przypadku wystąpienia \textit{timeoutu} (braku odpowiedzi sieciowej dla konkretnego zapytania), system nie odrzuca całego procesu po wielu godzinach pracy. Kod zachowuje odpowiedni tekst błędu (np. \texttt{Connection error}) wpisując go bezpiecznie w odpowiednią komórkę bazy danych tabeli. Pozłwala to na płynne kontynuowanie generowania kolejnego wiersza uniemożliwiając restart skryptu, pozostawiając operatorowi wgląd do omyłkowego elementu tuż poprzez odpowiednie odnalezienie słowa błędu w ostatecznym arkuszu docelowym Excel bądź CSV.
+
