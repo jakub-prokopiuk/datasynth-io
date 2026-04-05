@@ -7,9 +7,9 @@ Głównym celem systemu jest umożliwienie użytkownikom generowania syntetyczny
 
 System powinien udostępniać graficzny interfejs do modelowania struktury bazy danych. Użytkownik powinien mieć możliwość definiowania tabel, kolumn oraz typów danych, wybierając spośród trzech głównych generatorów:
 \begin{itemize}
-    \item \textbf{Generator deterministyczny:} Powinien służyć do szybkiego tworzenia standardowych danych o przewidywalnej strukturze (np. imiona, adresy, daty, identyfikatory \gls{UUID}).
-    \item \textbf{Generator kontekstowy:} Powinien pozwalać na zdefiniowanie szablonu promptu (np. ,,Napisz e-mail reklamacyjny dotyczący zamówienia \{order\_id\}''), który następnie zostanie przetworzony przez model językowy w celu wygenerowania unikalnej treści.
-    \item \textbf{Generator dystrybucyjny:} Powinien umożliwiać zdefiniowanie ważonych list wartości (np. statusy zamówień z określonym prawdopodobieństwem wystąpienia), aby odzwierciedlić rzeczywisty rozkład danych.
+    \item Generator deterministyczny: Powinien służyć do szybkiego tworzenia standardowych danych o przewidywalnej strukturze (np. imiona, adresy, daty, identyfikatory \gls{UUID}).
+    \item Generator kontekstowy: Powinien pozwalać na zdefiniowanie szablonu promptu (np. ,,Napisz e-mail reklamacyjny dotyczący zamówienia \{order\_id\}''), który następnie zostanie przetworzony przez model językowy w celu wygenerowania unikalnej treści.
+    \item Generator dystrybucyjny: Powinien umożliwiać zdefiniowanie ważonych list wartości (np. statusy zamówień z określonym prawdopodobieństwem wystąpienia), aby odzwierciedlić rzeczywisty rozkład danych.
 \end{itemize}
 
 \subsection*{Zachowanie integralności relacyjnej \cite{referential_integrity}}
@@ -19,7 +19,7 @@ Krytyczną funkcjonalnością systemu jest automatyczne zarządzanie relacjami m
 Ze względu na przewidywaną czasochłonność operacji z użyciem \gls{LLM}, system powinien umożliwiać asynchroniczne uruchamianie procesów generowania. Użytkownik powinien mieć możliwość zlecenia zadania, które trafi do kolejki przetwarzania, a system musi zapewniać mechanizm podglądu postępu prac w czasie rzeczywistym.
 
 \subsection*{Bezpośrednia integracja z bazami danych}
-Poza standardowym eksportem do plików płaskich (\gls{JSON}, \gls{CSV}) czy eksportu do poleceń INSERT, system powinien oferować funkcję bezpośredniego przesyłania do zewnętrznych baz danych. Aplikacja powinna obsługiwać połączenia z najpopularniejszymi silnikami \gls{SQL} (PostgreSQL, MySQL, MSSQL, Oracle) i wykonywać operacje typu \textit{batch insert}. Pozwoli to na natychmiastowe wykorzystanie wygenerowanych danych w środowiskach testowych lub deweloperskich bez konieczności ręcznego importu plików.
+Poza standardowym eksportem do plików płaskich (\gls{JSON}, \gls{CSV}) czy eksportu do poleceń INSERT, system powinien oferować funkcję bezpośredniego przesyłania do zewnętrznych baz danych. Aplikacja powinna obsługiwać połączenia z najpopularniejszymi silnikami \gls{SQL} (PostgreSQL, MySQL, MSSQL, Oracle) i wykonywać operacje typu batch insert. Pozwoli to na natychmiastowe wykorzystanie wygenerowanych danych w środowiskach testowych lub deweloperskich bez konieczności ręcznego importu plików.
 
 \subsection*{Zarządzanie projektami i szablonami}
 Zalogowani użytkownicy powinni mieć możliwość zapisywania zdefiniowanych schematów w chmurze, co pozwoli na ich późniejszą edycję i ponowne wykorzystanie. System powinien również wspierać import i eksport konfiguracji, ułatwiając współdzielenie schematów w zespołach deweloperskich.

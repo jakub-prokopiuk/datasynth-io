@@ -34,7 +34,7 @@ W tym scenariuszu stworzymy zestaw danych dla systemu obsługi przychodni, skła
 
 \subsection*{Krok 1: Tabela ,,Lekarze'' (Doctors)}
 \begin{enumerate}
-    \item Kliknij przycisk \textbf{,,Add Table''} i nazwij tabelę \texttt{doctors}. Ustaw liczbę wierszy na 10.
+    \item Kliknij przycisk ,,Add Table'' i nazwij tabelę \texttt{doctors}. Ustaw liczbę wierszy na 10.
     \item Dodaj pole \texttt{id} (typ: Faker, metoda: \texttt{uuid4}, Unique: TAK).
     \item Dodaj pole \texttt{name} (typ: Faker, metoda: \texttt{name}).
     \item Dodaj pole \texttt{specialization} (typ: Distribution). W opcjach wpisz: \texttt{["Kardiolog", "Pediatra", "Internista"]}, a w wagach: \texttt{[20, 30, 50]}.
@@ -59,10 +59,10 @@ W tym scenariuszu stworzymy zestaw danych dla systemu obsługi przychodni, skła
 
 \subsection*{Krok 4: Generowanie i eksport}
 \begin{enumerate}
-    \item Kliknij niebieski przycisk \textbf{,,Run Generation''}.
+    \item Kliknij niebieski przycisk ,,Run Generation''.
     \item Obserwuj pasek postępu. Proces może chwilę potrwać ze względu na generowanie opisów przez \gls{LLM}.
     \item Gdy generowanie się zakończy, sprawdź wyniki w tabeli podglądu. Zwróć uwagę, że \texttt{doctor\_id} i \texttt{patient\_id} zawsze odpowiadają istniejącym rekordom.
-    \item Kliknij \textbf{,,Download''} aby pobrać gotowy skrypt tworzący i zasilający bazę danych.
+    \item Kliknij ,,Download'' aby pobrać gotowy skrypt tworzący i zasilający bazę danych.
 \end{enumerate}
 
 \section{Zaawansowane funkcje}
@@ -71,6 +71,6 @@ Możesz tworzyć pola zależne od innych w tym samym wierszu. Na przykład, aby 
 \texttt{\{\{ first\_letter(imie) \}\}.\{\{ slugify(nazwisko) \}\}@firma.com}.
 
 \subsection*{Bezpośredni zrzut do bazy}
-Jeśli posiadasz uruchomioną bazę danych (np. lokalny PostgreSQL na porcie 5432), możesz użyć przycisku \textbf{,,Push to DB''}. Wprowadź adres połączeniowy, np.:
+Jeśli posiadasz uruchomioną bazę danych (np. lokalny PostgreSQL na porcie 5432), możesz użyć przycisku ,,Push to DB''. Wprowadź adres połączeniowy, np.:
 \url{postgresql://user:pass@localhost:5432/mojabaza}.
 System automatycznie utworzy tabele i wstawi wygenerowane rekordy. Upewnij się, że baza docelowa jest pusta lub nie posiada konfliktów nazw tabel.

@@ -9,9 +9,9 @@ Złożoność oraz rozległy zakres technologiczny projektu - obejmujący zarów
 
 Zastosowanie tych technologii pozwoliło na przyspieszenie powtarzalnych operacji i szybsze odnajdywanie specyficznych błędów w kodzie, w związku z czym modele te pełniły funkcję wirtualnego asystenta. Głównymi obszarami, w których posłużono się generatywną sztuczną inteligencją, były:
 \begin{itemize}
-    \item \textbf{Generowanie kodu pomocniczego \cite{boilerplate_code}}: Zautomatyzowanie tworzenia powtarzalnych i nużących struktur, deklaracji podstawowych widoków frontendowych czy bazowych szablonów dla plików konfiguracyjnych.
-    \item \textbf{Debugowanie}: Skonsultowanie trudnych do zinterpretowania logów, ostrzeżeń z bibliotek czy błędów pojawiających się w konsoli, co znacząco zmniejszyło czas potrzebny na lokalizację usterek.
-    \item \textbf{Konsultacje technologiczne i dokumentacyjne}: Szybkie odszukiwanie właściwych metod w nowych bibliotekach czy przypominanie rzadko używanych fragmentów składni.
+    \item Generowanie kodu pomocniczego \cite{boilerplate_code}: Zautomatyzowanie tworzenia powtarzalnych i nużących struktur, deklaracji podstawowych widoków frontendowych czy bazowych szablonów dla plików konfiguracyjnych.
+    \item Debugowanie: Skonsultowanie trudnych do zinterpretowania logów, ostrzeżeń z bibliotek czy błędów pojawiających się w konsoli, co znacząco zmniejszyło czas potrzebny na lokalizację usterek.
+    \item Konsultacje technologiczne i dokumentacyjne: Szybkie odszukiwanie właściwych metod w nowych bibliotekach czy przypominanie rzadko używanych fragmentów składni.
 \end{itemize}
 
 \section{Wkład autorski i decyzyjność}
@@ -20,10 +20,10 @@ Mimo wsparcia ze strony narzędzi AI, należy podkreślić, że stanowiły one w
 
 Do kluczowych zadań inżynierskich, zrealizowanych całkowicie samodzielnie przez autora, należą:
 \begin{itemize}
-    \item \textbf{Projektowanie architektury}: Samodzielne zaprojektowanie podziału na logiczne warstwy usług, wybór mechanizmów komunikacji między mikroserwisami (\gls{REST} \gls{API}, WebSocket) oraz decyzyjność co do stosu technologicznego (FastAPI, Redis, Celery, React, baza PostgreSQL).
-    \item \textbf{Implementacja silnika generowania danych}: Zaprojektowanie rdzenia logiki backendowej odpowiadającej za walidację oraz generację syntetycznych danych. Wyróżnia się tu m.in. implementację algorytmu sortowania topologicznego rozwiązującego zależności pomiędzy rozbudowanymi relacyjnie tabelami baz danych.
-    \item \textbf{Projekt interfejsu i interakcji użytkownika (\gls{UI}/\gls{UX})}: Opracowanie unikalnej koncepcji użytej aplikacji webowej i wizualizacji układu paneli roboczych, która musiała zapewniać ergonomię obsługi.
-    \item \textbf{Integracja systemu i ocena kodu}: Każdy fragment kodu zaproponowany przez narzędzia AI weryfikowany był przez autora pod kątem poprawności i zgodności z ogólną koncepcją systemu.
+    \item Projektowanie architektury: Samodzielne zaprojektowanie podziału na logiczne warstwy usług, wybór mechanizmów komunikacji między mikroserwisami (\gls{REST} \gls{API}, WebSocket) oraz decyzyjność co do stosu technologicznego (FastAPI, Redis, Celery, React, baza PostgreSQL).
+    \item Implementacja silnika generowania danych: Zaprojektowanie rdzenia logiki backendowej odpowiadającej za walidację oraz generację syntetycznych danych. Wyróżnia się tu m.in. implementację algorytmu sortowania topologicznego rozwiązującego zależności pomiędzy rozbudowanymi relacyjnie tabelami baz danych.
+    \item Projekt interfejsu i interakcji użytkownika (\gls{UI/\gls{UX})}: Opracowanie unikalnej koncepcji użytej aplikacji webowej i wizualizacji układu paneli roboczych, która musiała zapewniać ergonomię obsługi.
+    \item Integracja systemu i ocena kodu: Każdy fragment kodu zaproponowany przez narzędzia AI weryfikowany był przez autora pod kątem poprawności i zgodności z ogólną koncepcją systemu.
 \end{itemize}
 
 Wykorzystanie nowoczesnych asystentów programistycznych znacząco odciążyło dyplomanta z najbardziej mechanicznych oraz trywialnych aspektów pisania kodu oprogramowania. Zaoszczędzony w ten sposób czas pozwolił na znacznie głębsze skupienie się na meritum pracy: rozwiązywaniu problemów architektonicznych, a także dopracowywaniu detali implementacyjnych.

@@ -7,10 +7,10 @@ Warstwa serwerowa aplikacji, zaimplementowana w języku Python, została pokryta
 
 Testy, zlokalizowane w katalogu \texttt{backend/tests}, obejmują następujące scenariusze:
 \begin{itemize}
-    \item \textbf{Weryfikacja autentykacji}: Sprawdzenie poprawności generowania i walidacji tokenów \gls{JWT}. Testy upewniają się, że dostęp do chronionych zasobów bez ważnego tokenu jest blokowany (kod błędu 401 Unauthorized).
-    \item \textbf{\gls{CRUD} projektów}: Testowanie operacji tworzenia, odczytu i usuwania projektów. Weryfikowana jest poprawność zapisu struktury \gls{JSON} do bazy danych PostgreSQL.
-    \item \textbf{Walidacja schematów Pydantic}: Sprawdzenie, czy system poprawnie odrzuca błędne żądania (np. brak wymaganych pól, niepoprawne typy danych).
-    \item \textbf{Symulacja generowania danych}: Uruchamianie silnika generującego dla prostych konfiguracji w celu potwierdzenia, że zwracane dane są zgodne z zadeklarowanym typem.
+    \item Weryfikacja autentykacji: Sprawdzenie poprawności generowania i walidacji tokenów \gls{JWT}. Testy upewniają się, że dostęp do chronionych zasobów bez ważnego tokenu jest blokowany (kod błędu 401 Unauthorized).
+    \item \gls{CRUD projektów}: Testowanie operacji tworzenia, odczytu i usuwania projektów. Weryfikowana jest poprawność zapisu struktury \gls{JSON} do bazy danych PostgreSQL.
+    \item Walidacja schematów Pydantic: Sprawdzenie, czy system poprawnie odrzuca błędne żądania (np. brak wymaganych pól, niepoprawne typy danych).
+    \item Symulacja generowania danych: Uruchamianie silnika generującego dla prostych konfiguracji w celu potwierdzenia, że zwracane dane są zgodne z zadeklarowanym typem.
 \end{itemize}
 
 Przykładowy test weryfikujący działanie endpointu \texttt{/generate} wygląda następująco:
@@ -36,7 +36,7 @@ Celem tego testu było sprawdzenie integralności relacyjnej generowanych danych
     \item Utworzenie tabeli \texttt{users} z polami \texttt{id}, \texttt{name}, \texttt{email}.
     \item Utworzenie tabeli \texttt{orders} z polem \texttt{user\_id} jako klucz obcy do tabeli \texttt{users}.
     \item Uruchomienie generowania dla 100 użytkowników i 500 zamówień.
-    \item \textbf{Weryfikacja}: Sprawdzenie, czy każde zamówienie przypisane jest do istniejącego użytkownika. Test zakończył się sukcesem - silnik poprawnie rozwiązał zależności w 100\% przypadków.
+    \item Weryfikacja: Sprawdzenie, czy każde zamówienie przypisane jest do istniejącego użytkownika. Test zakończył się sukcesem - silnik poprawnie rozwiązał zależności w 100\% przypadków.
 \end{enumerate}
 
 \subsection*{Scenariusz 2: Integracja z LLM}
@@ -44,7 +44,7 @@ Testowano zachowanie systemu przy dużym obciążeniu zapytaniami do modelu jęz
 \begin{enumerate}
     \item Zdefiniowanie pola typu \texttt{llm} z promptem generującym opis produktu.
     \item Ustawienie liczby wierszy na 50.
-    \item \textbf{Obserwacja}: Początkowo czas generowania wyniósł średnio 1.66 sekundy na rekord przy użyciu modelu GPT-4o-mini, co przy większych zbiorach danych było wartością niesatysfakcjonującą. W celu optymalizacji wprowadzono mechanizm równoległego przetwarzania zapytań (\textit{batch processing}) z wykorzystaniem \texttt{asyncio.gather}. Po tej zmianie czas generowania serii 50 rekordów spadł do 11 sekund (ok. 0.22s na rekord), co stanowi ponad 7-krotne przyspieszenie. System poprawnie obsłużył asynchroniczność, nie blokując interfejsu użytkownika podczas oczekiwania na odpowiedź z \gls{API} OpenAI.
+    \item Obserwacja: Początkowo czas generowania wyniósł średnio 1.66 sekundy na rekord przy użyciu modelu GPT-4o-mini, co przy większych zbiorach danych było wartością niesatysfakcjonującą. W celu optymalizacji wprowadzono mechanizm równoległego przetwarzania zapytań (batch processing) z wykorzystaniem \texttt{asyncio.gather}. Po tej zmianie czas generowania serii 50 rekordów spadł do 11 sekund (ok. 0.22s na rekord), co stanowi ponad 7-krotne przyspieszenie. System poprawnie obsłużył asynchroniczność, nie blokując interfejsu użytkownika podczas oczekiwania na odpowiedź z \gls{API} OpenAI.
 \end{enumerate}
 
 \section{Analiza wydajności}
@@ -64,7 +64,6 @@ Przeprowadzono testy wydajnościowe mające na celu określenie limitów systemu
         \hline
         Złożone (z kontekstem AI) & 10\,000                 & --                    & 8\,038s ($\approx$2h 14min) \\
         \hline
-        % TODO: Uzupełnić wynikami testów na RTX 4060 Desktop
     \end{tabular}
     \caption{Zestawienie czasów generowania danych}
     \label{tab:performance_tests}
@@ -79,10 +78,10 @@ Do realizacji testów \gls{E2E} wybrano framework Playwright. Jest on nowoczesny
 
 Zaimplementowany scenariusz testowy pokrywa kluczową ścieżkę krytyczną\cite{happy_path} użytkownika:
 \begin{enumerate}
-    \item \textbf{Autoryzacja}: Scenariusz rozpoczyna się od wejścia na stronę logowania. Automat testowy wprowadza dane uwierzytelniające administratora i weryfikuje poprawne przekierowanie do głównego widoku aplikacji.
-    \item \textbf{Definicja schematu}: Wirtualny użytkownik dodaje nową tabelę o nazwie ,,users'' oraz konfiguruje jej strukturę, dodając kolumnę ,,name''. Test weryfikuje poprawność interakcji z formularzami oraz dynamiczne aktualizacje interfejsu.
-    \item \textbf{Generowanie danych}: Następuje uruchomienie procesu generowania danych poprzez kliknięcie przycisku ,,Run Generation''. Test monitoruje asynchroniczny proces, oczekując na komunikaty o postępie przekazywane przez WebSocket.
-    \item \textbf{Weryfikacja wyników}: Ostatnim krokiem jest potwierdzenie zakończenia zadania sukcesem (pojawienie się komunikatu ,,Data generated!'') oraz sprawdzenie dostępności przycisku pobierania wyników.
+    \item Autoryzacja: Scenariusz rozpoczyna się od wejścia na stronę logowania. Automat testowy wprowadza dane uwierzytelniające administratora i weryfikuje poprawne przekierowanie do głównego widoku aplikacji.
+    \item Definicja schematu: Wirtualny użytkownik dodaje nową tabelę o nazwie ,,users'' oraz konfiguruje jej strukturę, dodając kolumnę ,,name''. Test weryfikuje poprawność interakcji z formularzami oraz dynamiczne aktualizacje interfejsu.
+    \item Generowanie danych: Następuje uruchomienie procesu generowania danych poprzez kliknięcie przycisku ,,Run Generation''. Test monitoruje asynchroniczny proces, oczekując na komunikaty o postępie przekazywane przez WebSocket.
+    \item Weryfikacja wyników: Ostatnim krokiem jest potwierdzenie zakończenia zadania sukcesem (pojawienie się komunikatu ,,Data generated!'') oraz sprawdzenie dostępności przycisku pobierania wyników.
 \end{enumerate}
 
 Dzięki zastosowaniu symulowania odpowiedzi backendu w niektórych testach, możliwe jest izolowane testowanie warstwy frontendowej, co przyspiesza proces deweloperski i uniezależnia testy interfejsu od dostępności zewnętrznych usług czy modeli \gls{LLM}. Takie podejście gwarantuje, że błędy w warstwie prezentacji są wykrywane natychmiastowo, zanim kod trafi na środowisko produkcyjne.

@@ -15,12 +15,12 @@ System został zaprojektowany w architekturze klient-serwer, z wyraźnym podzia�
 
 Główne elementy systemu to:
 \begin{itemize}
-    \item \textbf{Backend \gls{API}}: Serwer aplikacji odpowiedzialny za logikę biznesową, autentykację użytkowników oraz zarządzanie procesem generowania danych.
-    \item \textbf{Frontend}: Aplikacja internetowa umożliwiająca użytkownikom interakcję z systemem, definiowanie schematów danych oraz podgląd wyników.
-    \item \textbf{Baza Danych Aplikacji (PostgreSQL)}: Przechowuje informacje o użytkownikach, projektach oraz historię zadań.
-    \item \textbf{Kolejka Zadań (Redis)}: Pośredniczy w przekazywaniu zadań generowania danych do procesów roboczych (workerów), co pozwala na asynchroniczne przetwarzanie długotrwałych operacji.
-    \item \textbf{Worker (Celery)}: Proces odpowiedzialny za właściwe generowanie danych na podstawie zdefiniowanych reguł.
-    \item \textbf{Ollama (\gls{LLM})}: Lokalny serwer modeli językowych, wykorzystywany do generowania danych wymagających kreatywności i kontekstu \cite{ollama}.
+    \item Backend \gls{API}: Serwer aplikacji odpowiedzialny za logikę biznesową, autentykację użytkowników oraz zarządzanie procesem generowania danych.
+    \item Frontend: Aplikacja internetowa umożliwiająca użytkownikom interakcję z systemem, definiowanie schematów danych oraz podgląd wyników.
+    \item Baza danych (PostgreSQL): Przechowuje informacje o użytkownikach, projektach oraz historię zadań.
+    \item Kolejka zadań (Redis): Pośredniczy w przekazywaniu zadań generowania danych do procesów roboczych (workerów), co pozwala na asynchroniczne przetwarzanie długotrwałych operacji.
+    \item Worker (Celery): Proces odpowiedzialny za właściwe generowanie danych na podstawie zdefiniowanych reguł.
+    \item Ollama (\gls{LLM)}: Lokalny serwer modeli językowych, wykorzystywany do generowania danych wymagających kreatywności i kontekstu \cite{ollama}.
 \end{itemize}
 
 \section{Implementacja backendowa}
@@ -61,7 +61,7 @@ Ze względu na potencjalnie długi czas generowania dużych zbiorów danych, pro
 Użytkownik, zlecając generowanie danych, wysyła żądanie do endpointu \texttt{/generate/async}. System tworzy nowe zadanie, zwraca identyfikator \texttt{job\_id} i kończy obsługę żądania \gls{HTTP}. Właściwe generowanie odbywa się w tle przez proces Workera. Status zadania jest monitorowany przez klienta w czasie rzeczywistym za pomocą protokołu WebSocket (endpoint \texttt{/ws/jobs/\{job\_id\}}), co pozwala na wyświetlanie paska postępu.
 
 \subsection*{Bezpieczeństwo}
-System implementuje mechanizm uwierzytelniania oparty na tokenach \gls{JWT} \cite{jwt_rf7519}. Hasła użytkowników są bezpiecznie przechowywane w bazie danych w formie zahaszowanej (przy użyciu algorytmu bcrypt). Każdy chroniony endpoint \gls{API} weryfikuje ważność tokenu przed przetworzeniem żądania, co realizowane jest za pomocą mechanizmu \textit{Dependency Injection} w FastAPI.
+System implementuje mechanizm uwierzytelniania oparty na tokenach \gls{JWT} \cite{jwt_rf7519}. Hasła użytkowników są bezpiecznie przechowywane w bazie danych w formie zahaszowanej (przy użyciu algorytmu bcrypt). Każdy chroniony endpoint \gls{API} weryfikuje ważność tokenu przed przetworzeniem żądania, co realizowane jest za pomocą mechanizmu Dependency Injection w FastAPI.
 
 \section{Implementacja frontendowa}
 Warstwa prezentacji została zrealizowana jako aplikacja typu Single Page Application (\gls{SPA}) przy użyciu biblioteki React. Do budowania projektu wykorzystano narzędzie Vite, a za stylowanie odpowiada framework Tailwind \gls{CSS}.
@@ -95,19 +95,19 @@ Lewy panel (widoczny na Rysunku \ref{fig:main_view}) zawiera zestaw narzędzi ni
 \subsubsection*{1. Pasek narzędzi}
 W górnej części panelu znajduje się pasek narzędzi służący do zarządzania stanem całego projektu. Użytkownik ma tutaj dostęp do następujących funkcjonalności:
 \begin{itemize}
-    \item \textbf{Zarządzanie projektami}: Przyciski umożliwiające zapisywanie i wczytywanie projektów z bazy danych.
-    \item \textbf{Szablony (Templates)}: Dostęp do gotowych, predefiniowanych schematów danych.
-    \item \textbf{Import/Eksport}: Możliwość zapisania schematu do lokalnego pliku \gls{JSON} oraz jego ponownego wczytania.
-    \item \textbf{Wczytywanie przykładowych danych}: Opcja pozwalająca na szybkie załadowanie przykładowego schematu (np. ,,E-commerce''), co jest szczególnie przydatne dla nowych użytkowników.
+    \item Zarządzanie projektami: Przyciski umożliwiające zapisywanie i wczytywanie projektów z bazy danych.
+    \item Szablony (Templates): Dostęp do gotowych, predefiniowanych schematów danych.
+    \item Import/Eksport: Możliwość zapisania schematu do lokalnego pliku \gls{JSON} oraz jego ponownego wczytania.
+    \item Wczytywanie przykładowych danych: Opcja pozwalająca na szybkie załadowanie przykładowego schematu (np. ,,E-commerce''), co jest szczególnie przydatne dla nowych użytkowników.
 \end{itemize}
 
 \subsubsection*{2. Konfiguracja globalna (Global Configuration)}
 Poniżej paska narzędzi znajdują się parametry definiujące ogólne właściwości generowanego zbioru danych:
 \begin{itemize}
-    \item \textbf{Nazwa zbioru}: Pole tekstowe definiujące nazwę zadania, która później służy jako nazwa pliku wynikowego.
-    \item \textbf{Lokalizacja (Locale)}: Rozwijana lista pozwalająca wybrać krąg kulturowy generowanych danych (np. \texttt{en\_US}, \texttt{pl\_PL}, \texttt{de\_DE}). Wybór ten wpływa na formatowanie dat, walut, numerów telefonów oraz język generowanych tekstów przez bibliotekę Faker.
-    \item \textbf{Format wyjściowy}: Pozwala zdefiniować, w jakiej postaci mają zostać zwrócone dane (\gls{JSON}, \gls{CSV} spakowany w ZIP, plik \gls{SQL}).
-    \item \textbf{Globalny kontekst AI}: Pole tekstowe, w którym użytkownik może opisać ogólny charakter generowanych danych (np. ,,System medyczny dla szpitala wojewódzkiego''). Kontekst ten jest ,,doklejany'' do promptów wysyłanych do modeli \gls{LLM}, co pozwala na zachowanie spójności tematycznej wszystkich generowanych pól.
+    \item Nazwa zbioru: Pole tekstowe definiujące nazwę zadania, która później służy jako nazwa pliku wynikowego.
+    \item Lokalizacja (Locale): Rozwijana lista pozwalająca wybrać krąg kulturowy generowanych danych (np. \texttt{en\_US}, \texttt{pl\_PL}, \texttt{de\_DE}). Wybór ten wpływa na formatowanie dat, walut, numerów telefonów oraz język generowanych tekstów przez bibliotekę Faker.
+    \item Format wyjściowy: Pozwala zdefiniować, w jakiej postaci mają zostać zwrócone dane (\gls{JSON}, \gls{CSV} spakowany w ZIP, plik \gls{SQL}).
+    \item Globalny kontekst AI: Pole tekstowe, w którym użytkownik może opisać ogólny charakter generowanych danych (np. ,,System medyczny dla szpitala wojewódzkiego''). Kontekst ten jest ,,doklejany'' do promptów wysyłanych do modeli \gls{LLM}, co pozwala na zachowanie spójności tematycznej wszystkich generowanych pól.
 \end{itemize}
 
 \begin{figure}[H]
@@ -121,9 +121,9 @@ Poniżej paska narzędzi znajdują się parametry definiujące ogólne właściw
 \subsubsection*{3. Menedżer tabel (Table Manager)}
 Poniżej konfiguracji znajduje się lista zdefiniowanych tabel. Moduł ten pozwala na:
 \begin{itemize}
-    \item \textbf{Tworzenie struktur relacyjnych}: Użytkownik może dodawać dowolną liczbę tabel, co pozwala na modelowanie złożonych relacji bazodanowych.
-    \item \textbf{Kontrolę wolumenu danych}: Każda tabela posiada niezależny licznik wierszy (Rows), co pozwala np. wygenerować 100 użytkowników i 5000 zamówień.
-    \item \textbf{Przeglądanie tabel}: Kliknięcie w nagłówek tabeli aktywuje ją, zmieniając kontekst dla listy pól i edytora.
+    \item Tworzenie struktur relacyjnych: Użytkownik może dodawać dowolną liczbę tabel, co pozwala na modelowanie złożonych relacji bazodanowych.
+    \item Kontrolę wolumenu danych: Każda tabela posiada niezależny licznik wierszy (Rows), co pozwala np. wygenerować 100 użytkowników i 5000 zamówień.
+    \item Przeglądanie tabel: Kliknięcie w nagłówek tabeli aktywuje ją, zmieniając kontekst dla listy pól i edytora.
 \end{itemize}
 
 \begin{figure}[H]
@@ -229,15 +229,15 @@ Aby zapewnić poprawność relacyjną generowanych danych, niezbędne jest ustal
 
 W systemie zaimplementowano wariant algorytmu Kahna dla sortowania topologicznego \cite{topological_sort}. Proces przebiega w następujących krokach:
 \begin{enumerate}
-    \item \textbf{Budowa grafu zależności}: Dla każdej tabeli analizowanem są jej pola. Jeśli pole jest typu \texttt{foreign\_key}, dodawana jest zależność od tabeli docelowej.
-    \item \textbf{Inicjalizacja}: Tworzona jest lista tabel ,,gotowych'' (nieposiadających niewygenerowanych zależności).
-    \item \textbf{Iteracja}: Dopóki lista ,,gotowych'' tabel nie jest pusta:
+    \item Budowa grafu zależności: Dla każdej tabeli analizowanem są jej pola. Jeśli pole jest typu \texttt{foreign\_key}, dodawana jest zależność od tabeli docelowej.
+    \item Inicjalizacja: Tworzona jest lista tabel ,,gotowych'' (nieposiadających niewygenerowanych zależności).
+    \item Iteracja: Dopóki lista ,,gotowych'' tabel nie jest pusta:
           \begin{itemize}
               \item Wybierana jest tabela, dodawana do listy wynikowej.
               \item Tabela ta jest usuwana z zależności innych tabel.
               \item Jeśli w wyniku usunięcia inna tabela traci wszystkie zależności, trafia na listę "gotowych".
           \end{itemize}
-    \item \textbf{Weryfikacja}: Jeśli po zakończeniu algorytmu lista wynikowa jest krótsza niż całkowita liczba tabel, oznacza to wykrycie cyklu, co jest zgłaszane jako błąd.
+    \item Weryfikacja: Jeśli po zakończeniu algorytmu lista wynikowa jest krótsza niż całkowita liczba tabel, oznacza to wykrycie cyklu, co jest zgłaszane jako błąd.
 \end{enumerate}
 
 \subsection*{Integracja z LLM}
@@ -245,9 +245,9 @@ Generowanie danych przy użyciu \gls{LLM} odbywa się w metodzie \texttt{\_gener
 
 Prompt wysyłany do modelu składa się z trzech części:
 \begin{itemize}
-    \item \textbf{System Message}: Instruuje model, aby wcielił się w rolę generatora danych fikcyjnych.
-    \item \textbf{Szablon użytkownika}: Szablon zdefiniowany przez użytkownika, np. ,,Opisz osobę \{name\} \{surname\}''. Zmienne w nawiasach klamrowych są podmieniane na wartości wygenerowane w bieżącym wierszu przy użyciu silnika Jinja2.
-    \item \textbf{Ograniczenia (Constraints)}: Dodawane dynamicznie instrukcje, np. wymuszenie unikalności.
+    \item System Message: Instruuje model, aby wcielił się w rolę generatora danych fikcyjnych.
+    \item Szablon użytkownika: Szablon zdefiniowany przez użytkownika, np. ,,Opisz osobę \{name\} \{surname\}''. Zmienne w nawiasach klamrowych są podmieniane na wartości wygenerowane w bieżącym wierszu przy użyciu silnika Jinja2.
+    \item Ograniczenia: Dodawane dynamicznie instrukcje, np. wymuszenie unikalności.
 \end{itemize}
 
 Zapewnienie unikalności w modelach probabilistycznych jest wyzwaniem. System stosuje podejście iteracyjne:
@@ -264,7 +264,7 @@ while attempts < 10:
     
     attempts += 1
 \end{verbatim}
-Temperatura (\textit{temperature}) jest hiperparametrem kontrolującym losowość generowanych odpowiedzi \gls{LLM}. Wzrost temperatury w kolejnych próbach spłaszcza rozkład prawdopodobieństwa kolejnych słów, co zwiększa ,,kreatywność'' modelu i znacząco zmniejsza szansę na wygenerowanie duplikatu.
+Temperatura (temperature) jest hiperparametrem kontrolującym losowość generowanych odpowiedzi \gls{LLM}. Wzrost temperatury w kolejnych próbach spłaszcza rozkład prawdopodobieństwa kolejnych słów, co zwiększa ,,kreatywność'' modelu i znacząco zmniejsza szansę na wygenerowanie duplikatu.
 
 W celu optymalizacji wydajności generowania danych \gls{LLM}, zaimplementowano dwufazowy algorytm przetwarzania. W pierwszej fazie silnik generuje wszystkie pola deterministyczne (z parametrem \texttt{skip\_llm=True}), budując kontekst każdego wiersza. Następnie zebrane konteksty są przekazywane do metody \texttt{\_generate\_llm\_batch\_value}, która dzieli je na podpartie o stałym rozmiarze (\texttt{SUB\_BATCH\_SIZE}). Dla każdej podpartii formułowany jest zbiorczy prompt, a model jest instruowany, by zwrócił tablicę \gls{JSON} z odpowiedziami. Podpartie są przetwarzane współbieżnie z ograniczeniem przez \texttt{asyncio.Semaphore} (\texttt{MAX\_CONCURRENT} slotów). Szczegóły procesu optymalizacji i doboru parametrów opisano w Rozdziale~\ref{sec:llm_optimization}.
 

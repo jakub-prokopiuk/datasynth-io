@@ -5,9 +5,9 @@ Wybór odpowiednich narzędzi jest kluczowym elementem procesu projektowania ka�
 \section{Język programowania backend: Python}
 Język Python został wybrany jako fundament warstwy serwerowej. Decyzja ta podyktowana była kilkoma czynnikami:
 \begin{enumerate}
-    \item \textbf{Ekosystem AI/ML}: Python jest niekwestionowanym liderem w dziedzinie sztucznej inteligencji. Biblioteki takie jak \texttt{openai} czy \texttt{pandas} posiadają natywne wsparcie dla tego języka, co znacznie upraszcza integrację z modelami \gls{LLM}.
-    \item \textbf{Generatory danych}: Dostępność biblioteki \texttt{Faker}, która jest standardem w generowaniu danych testowych.
-    \item \textbf{Szybkość prototypowania}: Zwięzła składnia Pythona pozwala na szybkie tworzenie i testowanie nowych funkcjonalności.
+    \item Ekosystem AI/ML: Python jest niekwestionowanym liderem w dziedzinie sztucznej inteligencji. Biblioteki takie jak \texttt{openai} czy \texttt{pandas} posiadają natywne wsparcie dla tego języka, co znacznie upraszcza integrację z modelami \gls{LLM}.
+    \item Generatory danych: Dostępność biblioteki \texttt{Faker}, która jest standardem w generowaniu danych testowych.
+    \item Szybkość prototypowania: Zwięzła składnia Pythona pozwala na szybkie tworzenie i testowanie nowych funkcjonalności.
 \end{enumerate}
 
 \section{Framework webowy: FastAPI vs Flask vs Django}
@@ -38,9 +38,9 @@ Dla interfejsu użytkownika zdecydowano się na model oparty na technologii jedn
 
 Aby dokonać obiektywnego wyboru, zdefiniowano następujące kryteria porównawcze:
 \begin{enumerate}
-    \item \textbf{Próg wejścia}: Poziom trudności oraz czas wymagany do efektywnego rozpoczęcia pracy z technologią.
-    \item \textbf{Model danych}: Sposób przepływu danych (jednokierunkowy vs dwukierunkowy) i jego wpływ na przewidywalność stanu aplikacji.
-    \item \textbf{Elastyczność}: Poziom swobody w doborze bibliotek towarzyszących (np. do routingu, zarządzania stanem).
+    \item Próg wejścia: Poziom trudności oraz czas wymagany do efektywnego rozpoczęcia pracy z technologią.
+    \item Model danych: Sposób przepływu danych (jednokierunkowy vs dwukierunkowy) i jego wpływ na przewidywalność stanu aplikacji.
+    \item Elastyczność: Poziom swobody w doborze bibliotek towarzyszących (np. do routingu, zarządzania stanem).
 \end{enumerate}
 
 \begin{table}[H]
@@ -60,24 +60,24 @@ Aby dokonać obiektywnego wyboru, zdefiniowano następujące kryteria porównawc
     \label{tab:frontend_comparison}
 \end{table}
 
-\textbf{Analiza alternatyw:}
+Analiza alternatyw:
 \begin{itemize}
-    \item \textbf{Angular}: Jest kompletnym rozwiązaniem typu ,,wszystko w jednym''. Choć oferuje gotowe narzędzia do większości zadań, narzuca sztywne ramy architektoniczne i wymaga znajomości TypeScript oraz biblioteki RxJS. Dla projektu, w którym priorytetem jest elastyczność i szybkość prototypowania, okazał się zbyt ciężki i skomplikowany.
-    \item \textbf{Vue.js}: Pod wieloma względami (np. wydajności) jest zbliżony do Reacta i posiada niższy próg wejścia. Jednak ekosystem Reacta, w tym dostępność gotowych komponentów integrujących się z nowoczesnymi narzędziami, jest znacznie bogatszy, co zadecydowało o jego odrzuceniu na korzyść Reacta.
+    \item Angular: Jest kompletnym rozwiązaniem typu ,,wszystko w jednym''. Choć oferuje gotowe narzędzia do większości zadań, narzuca sztywne ramy architektoniczne i wymaga znajomości TypeScript oraz biblioteki RxJS. Dla projektu, w którym priorytetem jest elastyczność i szybkość prototypowania, okazał się zbyt ciężki i skomplikowany.
+    \item Vue.js: Pod wieloma względami (np. wydajności) jest zbliżony do Reacta i posiada niższy próg wejścia. Jednak ekosystem Reacta, w tym dostępność gotowych komponentów integrujących się z nowoczesnymi narzędziami, jest znacznie bogatszy, co zadecydowało o jego odrzuceniu na korzyść Reacta.
 \end{itemize}
 
 Ostatecznie wybrano React, kierując się następującymi atutami:
 \begin{itemize}
-    \item \textbf{Komponentowość}: Ułatwia budowanie skomplikowanych interfejsów z małych, niezależnych i reużywalnych części (np. formularz pola, modal konfiguracji).
-    \item \textbf{Wirtualny \gls{DOM}}: Zapewnia wysoką wydajność, minimalizując kosztowne operacje na rzeczywistym drzewie DOM, co jest kluczowe przy wyświetlaniu dużych zestawów wygenerowanych danych.
-    \item \textbf{Bogaty ekosystem}: Ogromna społeczność i dostępność gotowych bibliotek (takich jak Lucide React) znacząco przyspiesza proces budowania interfejsu.
+    \item Komponentowość: Ułatwia budowanie skomplikowanych interfejsów z małych, niezależnych i reużywalnych części (np. formularz pola, modal konfiguracji).
+    \item Wirtualny \gls{DOM}: Zapewnia wysoką wydajność, minimalizując kosztowne operacje na rzeczywistym drzewie DOM, co jest kluczowe przy wyświetlaniu dużych zestawów wygenerowanych danych.
+    \item Bogaty ekosystem: Ogromna społeczność i dostępność gotowych bibliotek (takich jak Lucide React) znacząco przyspiesza proces budowania interfejsu.
 \end{itemize}
 
-Jako narzędzie budujące i środowisko uruchomieniowe wybrano \textbf{Vite} \cite{vite}, rezygnując z tradycyjnego rozwiązania jakim jest Webpack. Decyzja ta wynikała z fundamentalnych różnic w sposobie działania obu narzędzi:
+Jako narzędzie budujące i środowisko uruchomieniowe wybrano Vite \cite{vite}, rezygnując z tradycyjnego rozwiązania jakim jest Webpack. Decyzja ta wynikała z fundamentalnych różnic w sposobie działania obu narzędzi:
 \begin{itemize}
-    \item \textbf{Szybkość startu}: Vite wykorzystuje natywne moduły ES\cite{es_modules} w przeglądarce, co pozwala na natychmiastowe uruchomienie serwera deweloperskiego, niezależnie od rozmiaru aplikacji. Webpack musi zbudować cały kod aplikacji przed startem.
-    \item \textbf{\gls{HMR}}: W Vite podmiana modułów następuje niemal natychmiastowo, co znacząco przyspiesza tworzenie aplikacji.
-    \item \textbf{Optymalizacja kodu}: Vite w trybie produkcyjnym wykorzystuje narzędzie Rollup\cite{rollup}, co pozwala na zaawansowane optymalizacje, takie jak \textit{tree-shaking} (usuwanie martwego kodu) oraz \textit{lazy loading} (dzielenie kodu na mniejsze fragmenty ładowane na żądanie). Dzięki temu finalny plik aplikacji jest mniejszy i ładuje się szybciej.
+    \item Szybkość startu: Vite wykorzystuje natywne moduły ES\cite{es_modules} w przeglądarce, co pozwala na natychmiastowe uruchomienie serwera deweloperskiego, niezależnie od rozmiaru aplikacji. Webpack musi zbudować cały kod aplikacji przed startem.
+    \item \gls{HMR}: W Vite podmiana modułów następuje niemal natychmiastowo, co znacząco przyspiesza tworzenie aplikacji.
+    \item Optymalizacja kodu: Vite w trybie produkcyjnym wykorzystuje narzędzie Rollup\cite{rollup}, co pozwala na zaawansowane optymalizacje, takie jak tree-shaking (usuwanie martwego kodu) oraz lazy loading (dzielenie kodu na mniejsze fragmenty ładowane na żądanie). Dzięki temu finalny plik aplikacji jest mniejszy i ładuje się szybciej.
 \end{itemize}
 
 \section{Infrastruktura dodatkowa}
@@ -86,8 +86,8 @@ Głównym argumentem była potrzeba zachowania ścisłej spójności transakcyjn
 
 Generowanie tysięcy rekordów, szczególnie z użyciem \gls{LLM}, jest procesem czasochłonnym, który nie może blokować głównego wątku serwera \gls{HTTP}.
 \begin{itemize}
-    \item \textbf{Celery\cite{celery}}: Jest to rozproszony system kolejkowy, pozwalający na definiowanie zadań, które mogą być wykonywane przez wiele procesów roboczych równolegle.
-    \item \textbf{Redis\cite{redis}}: Pełni rolę brokera wiadomości, przechowując informacje o zadaniach do wykonania oraz ich wynikach.
+    \item Celery\cite{celery}: Jest to rozproszony system kolejkowy, pozwalający na definiowanie zadań, które mogą być wykonywane przez wiele procesów roboczych równolegle.
+    \item Redis\cite{redis}: Pełni rolę brokera wiadomości, przechowując informacje o zadaniach do wykonania oraz ich wynikach.
 \end{itemize}
 
 \section{Konteneryzacja: Docker}
