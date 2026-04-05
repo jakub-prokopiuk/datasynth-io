@@ -5,20 +5,12 @@ Stworzenie aplikacji łączącej konwencjonalne generowanie danych z wykorzystan
 \section{Informowanie użytkownika o postępie}
 Jednym z istotnych problemów na początku prac było płynne wyświetlanie paska postępu generowania na stronie internetowej, podczas gdy cały proces odbywał się w tle na serwerze.
 
-\subsection*{Problem z HTTP}
-Standardowe zapytania \gls{HTTP} nie sprawdzają się najlepiej w tym zastosowaniu, ponieważ przeglądarka musiałaby nieustannie pytać serwer o aktualny status. Przy większej liczbie użytkowników spowodowałoby to znaczne przeciążenie sieci.
-
-\subsection*{Rozwiązanie}
-Zdecydowano się na wykorzystanie protokołu WebSocket. W backendzie utworzono specjalny endpoint \texttt{/ws/jobs/\{job\_id\}}, do którego podłącza się aplikacja. Program działający w tle regularnie zapisuje swój postęp do pamięci współdzielonej, a połączenie WebSocket odczytuje te dane co pół sekundy i przesyła na bieżąco do przeglądarki. Dzięki temu interfejs działa responsywnie i płynnie aktualizuje pasek postępu.
+Standardowe zapytania \gls{HTTP} nie sprawdzają się najlepiej w tym zastosowaniu, ponieważ przeglądarka musiałaby nieustannie pytać serwer o aktualny status. Przy większej liczbie użytkowników spowodowałoby to znaczne przeciążenie sieci. Zdecydowano się na wykorzystanie protokołu WebSocket. W backendzie utworzono specjalny endpoint \texttt{/ws/jobs/\{job\_id\}}, do którego podłącza się aplikacja. Program działający w tle regularnie zapisuje swój postęp do pamięci współdzielonej, a połączenie WebSocket odczytuje te dane co pół sekundy i przesyła na bieżąco do przeglądarki. Dzięki temu interfejs działa responsywnie i płynnie aktualizuje pasek postępu.
 
 \section{Wymuszanie unikalności danych z modelu LLM}
 Modele językowe charakteryzują się niedeterministycznym działaniem, co stanowiło wyzwanie w przypadku generowania kolumn, dla których zaznaczono wymóg unikalności (np. dla numerów seryjnych generowanych przez AI).
 
-\subsection*{Powtarzalność wyników}
-Podczas testów zauważono, że przy ustawieniu wysokiej ,,temperatury'' (parametr \texttt{temperature}) model często tracił kontekst i nie trzymał się narzuconego formatu. Z kolei przy niskiej temperaturze wykazywał tendencję do generowania tych samych słów i schematów.
-
-\subsection*{Mechanizm ponowień}
-Aby zapobiec powstawaniu duplikatów, zaimplementowano własny mechanizm weryfikacji:
+Podczas testów zauważono, że przy ustawieniu wysokiej ,,temperatury'' (parametr \texttt{temperature}) model często tracił kontekst i nie trzymał się narzuconego formatu. Z kolei przy niskiej temperaturze wykazywał tendencję do generowania tych samych słów i schematów. Aby zapobiec powstawaniu duplikatów, zaimplementowano własny mechanizm weryfikacji:
 \begin{enumerate}
     \item Aplikacja zapisuje w pamięci listę wygenerowanych wartości dla danej unikalnej kolumny.
     \item Przy każdej nowej odpowiedzi od sztucznej inteligencji następuje sprawdzenie, czy dana wartość nie została już wykorzystana.
@@ -36,18 +28,15 @@ Tworzył się wówczas tzw. cykl zależności, który zapętlał program. Na obe
 
 Największym wyzwaniem dla wydajności systemu okazało się generowanie opisów przez lokalny model LLM. Początkowa wersja kodu zakładała przetwarzanie wierszy pojedynczo: program tworzył wiersz, wysyłał zapytanie do serwera Ollama, czekał na odpowiedź i dopiero wtedy przechodził do kolejnego rekordu. Rozwiązanie to było bardzo powolne.
 
-\subsection*{Identyfikacja problemu}
 Pomiary wykazały, że wygenerowanie 100 recenzji produktów przez model Llama 3 zajmowało blisko 130 sekund. Prawie 95\% tego czasu stanowiło oczekiwanie na odpowiedź sztucznej inteligencji, podczas gdy zwykłe dane tekstowe (np. nazwiska z biblioteki Faker) generowały się w ułamki sekund. Czas oczekiwania na jeden rekord wynosił około 1.3 sekundy, a procesor oraz karta graficzna przez większość tego czasu nie były w pełni obciążone.
 
-\subsection*{Rozwiązanie dwuetapowe}
 W celu lepszego wykorzystania zasobów obliczeniowych, wprowadzono algorytm dwufazowy:
 
 \begin{enumerate}
-    \item \textbf{Faza 1 -- dane proste}: W pierwszej kolejności aplikacja generuje wszystkie standardowe wiersze dla tabeli, całkowicie pomijając kolumny LLM. Działa to natychmiastowo i tworzy gotowe obiekty, które mogą posłużyć jako kontekst dla zapytań AI.
-    \item \textbf{Faza 2 -- grupowe zapytania LLM}: Zebrane konteksty są następnie przekazywane w paczkach do oddzielnej funkcji, która zajmuje się wyłącznie komunikacją z modelem.
+    \item W pierwszej kolejności aplikacja generuje wszystkie standardowe wiersze dla tabeli, całkowicie pomijając kolumny LLM. Działa to natychmiastowo i tworzy gotowe obiekty, które mogą posłużyć jako kontekst dla zapytań AI.
+    \item Zebrane konteksty są następnie przekazywane w paczkach do oddzielnej funkcji, która zajmuje się wyłącznie komunikacją z modelem.
 \end{enumerate}
 
-\subsection*{Grupowanie zapytań}
 Kluczem do przyspieszenia procesu okazało się grupowanie zapytań w mniejsze pakiety. Zamiast wysyłać pojedynczy wiersz, program opiera się na parametrze \texttt{SUB\_BATCH\_SIZE} (domyślnie 15) i wysyła do modelu kilkanaście kontekstów w jednym dużym prompcie. W odpowiedzi model zwraca tekstową strukturę \gls{JSON} zawierającą od razu cały pakiet wyników. Znacznie skraca to narzut czasu potrzebny na wielokrotne inicjalizowanie zapytań przez silnik AI.
 
 Dodatkowo, zastosowano mechanizm \texttt{asyncio.Semaphore}, który zezwala serwerowi Ollama na przetwarzanie kilku takich paczek jednocześnie (domyślnie 8 zapytań w tle). Jeśli wystąpi błąd formatowania dla danej paczki (np. model pominie znak w odpowiedzi \gls{JSON}), to ten mały fragment uszkodzonych 15 wierszy jest wyłapywany i przerabiany bezpiecznym, pojedynczym zapytaniem jeden po drugim, by nie psuć całego postępu generowania.

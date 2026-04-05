@@ -80,11 +80,10 @@ Jako narzędzie budujące i środowisko uruchomieniowe wybrano \textbf{Vite} \ci
     \item \textbf{Optymalizacja kodu}: Vite w trybie produkcyjnym wykorzystuje narzędzie Rollup\cite{rollup}, co pozwala na zaawansowane optymalizacje, takie jak \textit{tree-shaking} (usuwanie martwego kodu) oraz \textit{lazy loading} (dzielenie kodu na mniejsze fragmenty ładowane na żądanie). Dzięki temu finalny plik aplikacji jest mniejszy i ładuje się szybciej.
 \end{itemize}
 
-\section{Baza danych: PostgreSQL}
+\section{Infrastruktura dodatkowa}
 Mimo że generowane dane mogą mieć różną strukturę, zdecydowano się na relacyjną bazę danych PostgreSQL \cite{postgresql} do przechowywania metadanych systemu (użytkownicy, projekty, historia zadań).
 Głównym argumentem była potrzeba zachowania ścisłej spójności transakcyjnej (ACID \cite{acid_transaction}) przy zarządzaniu projektami oraz natywne wsparcie dla typu danych JSONB. Pozwala to na elastyczne przechowywanie konfiguracji schematów (które są strukturami \gls{JSON}) przy jednoczesnym zachowaniu zalet języka \gls{SQL} do zapytań analitycznych.
 
-\section{Przetwarzanie asynchroniczne: Celery + Redis}
 Generowanie tysięcy rekordów, szczególnie z użyciem \gls{LLM}, jest procesem czasochłonnym, który nie może blokować głównego wątku serwera \gls{HTTP}.
 \begin{itemize}
     \item \textbf{Celery\cite{celery}}: Jest to rozproszony system kolejkowy, pozwalający na definiowanie zadań, które mogą być wykonywane przez wiele procesów roboczych równolegle.
