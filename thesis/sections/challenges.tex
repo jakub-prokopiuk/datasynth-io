@@ -112,7 +112,14 @@ W celu ostatecznego porównania wydajności wykonano próbę obciążeniową pol
     \label{tab:llm_scalability}
 \end{table}
 
-Wygenerowanie 10\,000 wierszy na laptopie z serwerem Ollama zajęło ponad 8\,038 sekund (nieco ponad 2 godziny). Długotrwałe obciążenie karty graficznej wiązało się ze zjawiskiem tzw. \textit{thermal throttlingu} (zabezpieczenie przed przegrzaniem obniżające taktowanie procesora), przez co średni czas utworzenia jednego wiersza wzrósł z 0,52 do 0,80 sekundy. Mimo to aplikacja zniosła ten test poprawnie i zapisała całą tabelę w pliku bazy SQLite.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/hardware_comparison_chart.pdf}
+    \caption{Wykres porównujący czas generowania 10\,000 wierszy AI na różnym sprzęcie}
+    \label{fig:hardware_chart}
+\end{figure}
+
+Jak przedstawia Rysunek \ref{fig:hardware_chart}, wygenerowanie 10\,000 wierszy na laptopie z serwerem Ollama zajęło ponad 8\,038 sekund (nieco ponad 2 godziny). Długotrwałe obciążenie karty graficznej wiązało się ze zjawiskiem tzw. thermal throttlingu (zabezpieczenie przed przegrzaniem obniżające taktowanie procesora), przez co średni czas utworzenia jednego wiersza wzrósł z 0,52 do 0,80 sekundy. Mimo to aplikacja zniosła ten test poprawnie i zapisała całą tabelę w pliku bazy SQLite.
 
 Dla porównania, ten sam schemat z serwerem Ollama uruchomiono w darmowym środowisku chmurowym Kaggle, dysponującym dwoma kartami Tesla T4 (łącznie 32 GB pamięci VRAM). Pełna próba 10\,000 wierszy na Kaggle zajęła aż 14\,860 sekund (ponad 4 godziny). Różnica wydajności względem laptopa wynika ze specyfikacji sprzętowych -- karty Tesla T4 oparte są na architekturze Turing \cite{turing_microarchitecture} z 2018 roku, która nie posiada ulepszonych jednostek obliczeniowych obecnych w nowoczesnych kartach z serii RTX (architektura Ada Lovelace \cite{ada_lovelace_microarchitecture}).
 
