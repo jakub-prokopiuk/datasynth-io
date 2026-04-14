@@ -8,7 +8,7 @@ Warstwa serwerowa aplikacji, zaimplementowana w języku Python, została pokryta
 Testy, zlokalizowane w katalogu \texttt{backend/tests}, obejmują następujące scenariusze:
 \begin{itemize}
     \item Weryfikacja autentykacji: Sprawdzenie poprawności generowania i walidacji tokenów \gls{JWT}. Testy upewniają się, że dostęp do chronionych zasobów bez ważnego tokenu jest blokowany (kod błędu 401 Unauthorized).
-    \item \gls{CRUD projektów}: Testowanie operacji tworzenia, odczytu i usuwania projektów. Weryfikowana jest poprawność zapisu struktury \gls{JSON} do bazy danych PostgreSQL.
+    \item \gls{CRUD} projektów: Testowanie operacji tworzenia, odczytu i usuwania projektów. Weryfikowana jest poprawność zapisu struktury \gls{JSON} do bazy danych PostgreSQL.
     \item Walidacja schematów Pydantic: Sprawdzenie, czy system poprawnie odrzuca błędne żądania (np. brak wymaganych pól, niepoprawne typy danych).
     \item Symulacja generowania danych: Uruchamianie silnika generującego dla prostych konfiguracji w celu potwierdzenia, że zwracane dane są zgodne z zadeklarowanym typem.
 \end{itemize}

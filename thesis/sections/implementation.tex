@@ -20,7 +20,7 @@ Główne elementy systemu to:
     \item Baza danych (PostgreSQL): Przechowuje informacje o użytkownikach, projektach oraz historię zadań.
     \item Kolejka zadań (Redis): Pośredniczy w przekazywaniu zadań generowania danych do procesów roboczych (workerów), co pozwala na asynchroniczne przetwarzanie długotrwałych operacji.
     \item Worker (Celery): Proces odpowiedzialny za właściwe generowanie danych na podstawie zdefiniowanych reguł.
-    \item Ollama (\gls{LLM)}: Lokalny serwer modeli językowych, wykorzystywany do generowania danych wymagających kreatywności i kontekstu \cite{ollama}.
+    \item Ollama (\gls{LLM}): Lokalny serwer modeli językowych, wykorzystywany do generowania danych wymagających kreatywności i kontekstu \cite{ollama}.
 \end{itemize}
 
 \section{Implementacja backendowa}
@@ -81,16 +81,9 @@ Dostęp do systemu jest chroniony i wymaga uwierzytelnienia.
 Na rysunku \ref{fig:login_page} przedstawiono widok logowania. Użytkownik musi podać nazwę użytkownika oraz hasło. System komunikuje się z \gls{API} w celu weryfikacji poświadczeń i w przypadku sukcesu otrzymuje token \gls{JWT}, który jest zapisywany w pamięci przeglądarki. Interfejs obsługuje również wyświetlanie komunikatów o błędach w przypadku niepoprawnych danych.
 
 \subsection*{Główny widok aplikacji}
-Po zalogowaniu użytkownik dostaje dostęp do głównego widoku aplikacji, który stanowi centrum tworzenia schematu bazy danych. Interfejs został zaprojektowany z myślą o ergonomii, dzieląc ekran na dwie główne sekcje: lewy panel konfiguracyjny (budowanie schematu) oraz prawy panel wyników (podgląd i eksport).
+Po zalogowaniu użytkownik dostaje dostęp do głównego widoku aplikacji, który stanowi centrum tworzenia schematu bazy danych. Interfejs został zaprojektowany z myślą o ergonomii, dzieląc ekran na dwie główne sekcje: lewy panel konfiguracyjny (budowanie schematu) oraz prawy panel wyników (podgląd i eksport). Opis obu części znajduje się poniżej.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1\textwidth]{images/main_view.png}
-    \caption{Główny widok aplikacji - edytor schematu i panel wyników}
-    \label{fig:main_view}
-\end{figure}
-
-Lewy panel (widoczny na Rysunku \ref{fig:main_view}) zawiera zestaw narzędzi niezbędnych do zdefiniowania struktury zbioru danych. Składa się on z następujących kluczowych modułów:
+Lewy panel zawiera zestaw narzędzi niezbędnych do zdefiniowania struktury zbioru danych. Składa się on z następujących kluczowych modułów:
 
 \subsubsection*{1. Pasek narzędzi}
 W górnej części panelu znajduje się pasek narzędzi służący do zarządzania stanem całego projektu. Użytkownik ma tutaj dostęp do następujących funkcjonalności:
@@ -113,7 +106,7 @@ Poniżej paska narzędzi znajdują się parametry definiujące ogólne właściw
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{images/global_config.png}
-    \caption{Formularz konfiguracji globalnej}
+    \caption{Formularz konfiguracji globalnej i pasek narzędzi}
     \label{fig:global_config}
 \end{figure}
 
@@ -122,13 +115,13 @@ Poniżej paska narzędzi znajdują się parametry definiujące ogólne właściw
 Poniżej konfiguracji znajduje się lista zdefiniowanych tabel. Moduł ten pozwala na:
 \begin{itemize}
     \item Tworzenie struktur relacyjnych: Użytkownik może dodawać dowolną liczbę tabel, co pozwala na modelowanie złożonych relacji bazodanowych.
-    \item Kontrolę wolumenu danych: Każda tabela posiada niezależny licznik wierszy (Rows), co pozwala np. wygenerować 100 użytkowników i 5000 zamówień.
+    \item Kontrolę wolumenu danych: Każda tabela posiada niezależny licznik wierszy, co pozwala np. wygenerować 100 użytkowników i 5000 zamówień.
     \item Przeglądanie tabel: Kliknięcie w nagłówek tabeli aktywuje ją, zmieniając kontekst dla listy pól i edytora.
 \end{itemize}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{images/tables.png}
+    \includegraphics[width=0.65\textwidth]{images/tables.png}
     \caption{Menedżer tabel}
     \label{fig:tables}
 \end{figure}
@@ -168,7 +161,16 @@ Na rysunkach \ref{fig:schema_builder_ai} oraz \ref{fig:schema_builder_distributi
 
 
 \subsubsection*{5. Lista pól (Field List)}
-Dolną część panelu zajmuje lista pól dla aktywnej tabeli. Każdy element listy prezentuje nazwę kolumny, typ generatora (oznaczony kolorowym badge'm dla łatwej identyfikacji) oraz ewentualne flagi (np. \texttt{UNIQ} dla wartości unikalnych). W przypadku pól zależnych (np. Template lub Foreign Key), system wizualizuje zależności, wyświetlając informację, do jakich innych atrybutów lub tabel odwołuje się dana kolumna. Moduł umożliwia również szybką edycję parametrów oraz usuwanie poszczególnych pól ze struktury.
+Dolną część panelu zajmuje lista pól dla aktywnej tabeli. Każdy element listy prezentuje nazwę kolumny, typ generatora (oznaczony kolorowym badge'm dla łatwej identyfikacji) oraz ewentualne flagi (np. \texttt{UNIQ} dla wartości unikalnych). Moduł umożliwia również szybką edycję parametrów oraz usuwanie poszczególnych pól ze struktury.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/foreign_key_screen.png}
+    \caption{Interfejs konfigurowania klucza obcego pośród opcji parametrów w panelu bocznym}
+    \label{fig:foreign_key_ui}
+\end{figure}
+
+Rysunek \ref{fig:foreign_key_ui} przedstawia zrzut ekranu panelu ustawień wybranego pola w kreatorze schematu. Po wskazaniu typu generatora klucza obcego, użytkownikowi automatycznie prezentowane są dedykowane parametry, pozwalające na wygodne wskazanie tabeli nadrzędnej oraz konkretnej kolumny (z wcześniej dodanych przez użytkownika pól). Rozwiązanie to zdejmuje z twórcy schematu ciężar konieczności manualnego wpisywania komend \gls{SQL}, znacznie ułatwiając sprawne i wizualne prototypowanie relacji między tabelami.
 
 \begin{figure}[H]
     \centering
@@ -182,7 +184,7 @@ Proces generowania danych odbywa się asynchronicznie, a postęp jest wizualizow
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{images/loading.png}
+    \includegraphics[width=1\textwidth]{images/loading.png}
     \caption{Okno postępu generowania}
     \label{fig:generation_modal}
 \end{figure}
@@ -195,19 +197,19 @@ Po zakończeniu procesu (Rysunek \ref{fig:generation_modal}), wyniki są prezent
     \item Bezpośredniego eksportu danych do zewnętrznej bazy danych (poprzez podanie parametrów połączenia).
 \end{itemize}
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.7\textwidth]{images/generated_data_table.png}
-    \caption{Wygenerowane dane w formacie tabeli}
-    \label{fig:generated_data_table}
-\end{figure}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.7\textwidth]{images/generated_data_table.png}
+%     \caption{Wygenerowane dane w formacie tabeli}
+%     \label{fig:generated_data_table}
+% \end{figure}
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.7\textwidth]{images/generated_data_json.png}
-    \caption{Wygenerowane dane w formacie \gls{JSON}}
-    \label{fig:generated_data_json}
-\end{figure}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.7\textwidth]{images/generated_data_json.png}
+%     \caption{Wygenerowane dane w formacie \gls{JSON}}
+%     \label{fig:generated_data_json}
+% \end{figure}
 
 \begin{figure}[H]
     \centering
@@ -216,7 +218,9 @@ Po zakończeniu procesu (Rysunek \ref{fig:generation_modal}), wyniki są prezent
     \label{fig:push_to_database_modal}
 \end{figure}
 
-Na rysunkach \ref{fig:generated_data_table} oraz \ref{fig:generated_data_json} przedstawiono przykładowy widok wygenerowanych danych. Użytkownik może łatwo przełączać się między widokiem tabelarycznym a surowym \gls{JSON}-em. Rysunek \ref{fig:push_to_database_modal} prezentuje formularz umożliwiający bezpośredni eksport danych do zewnętrznej bazy danych, co jest szczególnie przydatne dla deweloperów chcących szybko zasilić testową bazę danymi.
+Na rysunku \ref{fig:push_to_database_modal} przedstawiono formularz umożliwiający bezpośredni eksport danych do zewnętrznej bazy danych, co jest szczególnie przydatne dla deweloperów chcących szybko zasilić testową bazę danymi.
+
+Z racji na zbyt duży rozmiar pliku, zrezygnowano z umieszczania zrzutów ekranu z widokiem wygenerowanych danych w pracy pisemnej.
 
 Stan aplikacji jest zarządzany głównie przy użyciu hooków React (\texttt{useState}, \texttt{useEffect}). Do obsługi złożonego stanu edytora schematu stworzono dedykowany hook \texttt{useSchema}, który centralizuje logikę dodawania, usuwania i edycji tabel oraz pól.
 
