@@ -1,0 +1,17 @@
+\begin{easyappendix}{Kod źródłowy aplikacji w repozytorium GitHub}
+\label{app:github}
+
+Kompletne rozwiązanie programistyczne opisane w niniejszej pracy --- wraz z konfiguracją Docker, testami automatycznymi oraz dokumentacją uruchomieniową --- udostępnione jest publicznie w repozytorium:
+
+\url{https://github.com/jakub-prokopiuk/datasynth-ai}
+
+Repozytorium zawiera m.in.:
+\begin{itemize}
+    \item kod warstwy backendowej (FastAPI, Celery) oraz frontendowej (React),
+    \item pliki \texttt{docker-compose.yml} i obrazy Docker niezbędne do uruchomienia systemu,
+    \item testy backendu (\texttt{pytest}) oraz testy \gls{E2E} (Playwright),
+    \item przykładowe schematy danych wykorzystywane podczas testów wydajnościowych.
+\end{itemize}
+
+Aby uruchomić aplikację lokalnie, wystarczy sklonować repozytorium i wykonać polecenie \texttt{docker compose up --build}. Szczegółowy opis konfiguracji znajduje się w pliku \texttt{README.md} repozytorium.
+\end{easyappendix}

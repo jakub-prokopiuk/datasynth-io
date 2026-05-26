@@ -42,10 +42,10 @@ Testowano zachowanie systemu przy generowaniu pól typu \texttt{llm} oraz popraw
 \begin{enumerate}
     \item Zdefiniowanie pola typu \texttt{llm} z promptem generującym opis produktu.
     \item Ustawienie liczby wierszy na 50.
-    \item Obserwacja: Interfejs pozostawał responsywny podczas oczekiwania na odpowiedź z \gls{API} OpenAI, a pasek postępu aktualizował się w czasie rzeczywistym. Po zakończeniu zadania wygenerowano kompletny zestaw rekordów zgodny ze schematem. Szczegóły pomiarów wydajnościowych oraz optymalizacji opisano w Sekcji~\ref{sec:llm_optimization}.
+    \item Obserwacja: Interfejs pozostawał responsywny podczas oczekiwania na odpowiedź z \gls{API} OpenAI, a pasek postępu aktualizował się w czasie rzeczywistym. Po zakończeniu zadania wygenerowano kompletny zestaw rekordów zgodny ze schematem. Szczegóły pomiarów wydajnościowych oraz optymalizacji opisano w Sekcji \ref{sec:llm_optimization}.
 \end{enumerate}
 
-\subsection{Testy End-to-End (\gls{E2E})}
+\subsection{Testy End-to-End (\texorpdfstring{\gls{E2E}}{E2E})}
 W celu weryfikacji integralności całego systemu wprowadzono testy typu \gls{E2E}, symulujące rzeczywiste scenariusze użytkowania --- od interfejsu w przeglądarce, przez warstwę \gls{API}, aż po logikę biznesową i bazy danych.
 
 Do realizacji testów \gls{E2E} wybrano framework Playwright. Jest on nowoczesnym narzędziem umożliwiającym automatyzację testów w wielu przeglądarkach (Chromium, Firefox, WebKit) oraz zapewniającym wysoką niezawodność dzięki mechanizmom automatycznego oczekiwania na elementy interfejsu.

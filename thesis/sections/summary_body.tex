@@ -6,13 +6,16 @@ W ramach prac zrealizowano wszystkie założone wymagania funkcjonalne i niefunk
     \item Hybrydowy silnik generujący: Stworzono elastyczny mechanizm łączący bibliotekę Faker, szablony Jinja2 oraz modele \gls{LLM} (OpenAI/Ollama). Pozwala to na generowanie danych o dowolnym stopniu skomplikowania --- od prostych typów liczbowych po złożone opisy tekstowe.
     \item Obsługa relacji: Zaimplementowano algorytm automatycznego rozwiązywania zależności między tabelami, co gwarantuje spójność referencyjną generowanych zbiorów danych.
     \item Wydajność: Dzięki zastosowaniu architektury asynchronicznej (Celery + Redis) oraz optymalizacji wsadowego generowania przez \gls{LLM}, system jest w stanie obsłużyć generowanie dużych zbiorów danych bez blokowania interfejsu użytkownika.
+    \item Eksport i integracja z bazami danych: Zaimplementowano bezpośredni zrzut danych do PostgreSQL, MySQL, MSSQL oraz Oracle, a także eksport do plików \gls{JSON} i \gls{CSV}.
     \item Konteneryzacja: Całość rozwiązania została zamknięta w kontenerach Docker, co drastycznie upraszcza proces wdrożenia i konfiguracji w dowolnym środowisku.
 \end{itemize}
+
+Kod źródłowy aplikacji udostępniono w repozytorium GitHub (Załącznik~\ref{app:github}).
 
 \subsection{Dalszy rozwój aplikacji}
 Zrealizowany projekt stanowi solidną podstawę do dalszego rozwoju. Zidentyfikowano kilka obszarów, w których system mógłby zostać rozbudowany:
 \begin{enumerate}
-    \item Wsparcie dla kolejnych silników bazodanowych: Obecnie system wspiera eksport do PostgreSQL. Rozszerzenie o natywne wsparcie dla MySQL, Oracle oraz baz NoSQL (np. MongoDB) zwiększyłoby uniwersalność narzędzia.
+    \item Wsparcie dla baz NoSQL: Rozszerzenie mechanizmu eksportu o silniki dokumentowe (np. MongoDB) zwiększyłoby uniwersalność narzędzia w scenariuszach pozarelacyjnych.
     \item Generowanie na podstawie istniejącej bazy: Ciekawą funkcjonalnością byłaby inżynieria wsteczna --- podłączenie się do istniejącej bazy danych, automatyczne odczytanie jej schematu i wygenerowanie danych testowych ,,podobnych'' do danych produkcyjnych (z zachowaniem anonimizacji).
     \item Inteligentne wykrywanie typów: Wykorzystanie \gls{LLM} do automatycznej sugestii typów danych na podstawie samej nazwy kolumny (np. wpisując nazwę ,,pesel'', system sam proponuje odpowiedni generator regex).
 \end{enumerate}

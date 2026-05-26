@@ -1,6 +1,6 @@
 Największym wyzwaniem dla wydajności systemu okazało się generowanie opisów przez modele \gls{LLM}. Początkowa wersja kodu zakładała przetwarzanie wierszy pojedynczo: program tworzył wiersz, wysyłał zapytanie do serwera Ollama, czekał na odpowiedź i dopiero wtedy przechodził do kolejnego rekordu.
 
-Pomiary wykazały, że wygenerowanie 100 recenzji produktów przez model Llama~3 zajmowało blisko 130 sekund. Prawie 95\% tego czasu stanowiło oczekiwanie na odpowiedź sztucznej inteligencji, podczas gdy zwykłe dane tekstowe (np. nazwiska z biblioteki Faker) generowały się w ułamki sekund. Czas oczekiwania na jeden rekord wynosił około 1,3 sekundy, a procesor oraz karta graficzna przez większość tego czasu nie były w pełni obciążone.
+Pomiary wykazały, że wygenerowanie 100 recenzji produktów przez model Llama 3 zajmowało blisko 130 sekund. Prawie 95\% tego czasu stanowiło oczekiwanie na odpowiedź sztucznej inteligencji, podczas gdy zwykłe dane tekstowe (np. nazwiska z biblioteki Faker) generowały się w ułamki sekund. Czas oczekiwania na jeden rekord wynosił około 1,3 sekundy, a procesor oraz karta graficzna przez większość tego czasu nie były w pełni obciążone.
 
 \subsection{Algorytm dwufazowy i przetwarzanie wsadowe}
 W celu lepszego wykorzystania zasobów obliczeniowych wprowadzono algorytm dwufazowy:
@@ -14,7 +14,7 @@ Kluczem do przyspieszenia procesu okazało się grupowanie zapytań w mniejsze p
 Dodatkowo zastosowano mechanizm \texttt{asyncio.Semaphore}, który zezwala serwerowi Ollama na przetwarzanie kilku takich paczek jednocześnie (domyślnie 8 zapytań w tle). Jeśli wystąpi błąd formatowania dla danej paczki (np. model pominie znak w odpowiedzi \gls{JSON}), uszkodzony fragment jest wyłapywany i przerabiany bezpiecznym, pojedynczym zapytaniem, aby nie psuć całego postępu generowania.
 
 \subsection{Dobór parametrów optymalizacji}
-W celu dobrania optymalnych wielkości paczek przeprowadzono testy wydajnościowe. Jako stację wykorzystano laptopa z kartą graficzną NVIDIA RTX~5060, korzystając z modelu Llama~3 uruchomionego lokalnie w środowisku Ollama dla próbki 100 wierszy AI.
+W celu dobrania optymalnych wielkości paczek przeprowadzono testy wydajnościowe. Jako stację wykorzystano laptopa z kartą graficzną NVIDIA RTX 5060, korzystając z modelu Llama 3 uruchomionego lokalnie w środowisku Ollama dla próbki 100 wierszy AI.
 
 \begin{table}[H]
     \centering
@@ -37,10 +37,10 @@ W celu dobrania optymalnych wielkości paczek przeprowadzono testy wydajnościow
     \label{tab:llm_optimization_100}
 \end{table}
 
-Zgodnie z Tabelą~\ref{tab:llm_optimization_100}, przy najlepiej dobranych parametrach udało się skrócić czas ze 130 sekund do około 52. Oznacza to blisko 2,5-krotne przyspieszenie bez negatywnego wpływu na złożoność całego programu. Zaobserwowano również, że zbyt wysokie ustawienie równoległych żądań (próba~2) doprowadziło do przeciążenia API i drastycznego wydłużenia pracy.
+Zgodnie z Tabelą \ref{tab:llm_optimization_100}, przy najlepiej dobranych parametrach udało się skrócić czas ze 130 sekund do około 52. Oznacza to blisko 2,5-krotne przyspieszenie bez negatywnego wpływu na złożoność całego programu. Zaobserwowano również, że zbyt wysokie ustawienie równoległych żądań (próba 2) doprowadziło do przeciążenia API i drastycznego wydłużenia pracy.
 
 \subsection{Porównanie wydajności Faker i LLM}
-Kolejne pomiary wykonano na tym samym sprzęcie, wykorzystując schemat testowy \texttt{ecommerce\_llm\_schema} zawierający 4 tabele, w tym tabelę recenzji z polem \texttt{review\_text} generowanym przez \gls{LLM}.
+Kolejne pomiary wykonano na tym samym sprzęcie. Wykorzystano czterotabelowy schemat testowy \texttt{ecommerce\_llm\_\allowbreak schema}, w tym tabelę recenzji z polem \texttt{review\_text} generowanym przez \gls{LLM}.
 
 \begin{table}[H]
     \centering
@@ -61,7 +61,7 @@ Kolejne pomiary wykonano na tym samym sprzęcie, wykorzystując schemat testowy 
     \label{tab:performance_tests}
 \end{table}
 
-Jak widać w Tabeli~\ref{tab:performance_tests}, generowanie danych przy użyciu algorytmów pseudolosowych (Faker) jest niezwykle szybkie i skalowalne liniowo. Wąskim gardłem systemu pozostaje generowanie treści przez \gls{LLM}, co potwierdza słuszność decyzji o zastosowaniu przetwarzania wsadowego z kontrolą współbieżności.
+Jak widać w Tabeli \ref{tab:performance_tests}, generowanie danych przy użyciu algorytmów pseudolosowych (Faker) jest niezwykle szybkie i skalowalne liniowo. Wąskim gardłem systemu pozostaje generowanie treści przez \gls{LLM}, co potwierdza słuszność decyzji o zastosowaniu przetwarzania wsadowego z kontrolą współbieżności.
 
 \subsection{Alternatywny silnik --- vLLM}
 Początkowe prace nad aplikacją oraz testy lokalne opierały się na serwerze Ollama \cite{ollama} --- narzędziu zaprojektowanym z myślą o prostocie obsługi i łatwym uruchamianiu modeli LLM na komputerach osobistych. Ollama wyróżnia się intuicyjnym interfejsem i prostym procesem instalacji, co doskonale sprawdza się przy deweloperskich eksperymentach. Jednakże w zastosowaniach chmurowych, wymagających dużej przepustowości i serwowania wielu równoczesnych zapytań, jego architektura nie oferuje optymalnej wydajności.
@@ -75,7 +75,7 @@ Wdrożenie vLLM w środowisku Kaggle wymagało rozwiązania dodatkowych problem�
 
 Rozwiązaniem okazało się zastosowanie starszej wersji vLLM (0.6.6), która zamiast FlashInfer wykorzystuje bibliotekę xFormers \cite{xformers}. xFormers dostarcza prekompilowane, wydajne implementacje operacji uwagi, co eliminuje konieczność kompilacji kerneli CUDA w czasie uruchamiania serwera.
 
-Model Llama~3 8B-Instruct uruchomiono z podziałem tensorów na dwie karty Tesla T4 (\texttt{tensor-parallel-size=2}), co pozwoliło na wykorzystanie łącznie 32~GB pamięci VRAM. Aplikacja, dzięki oparciu komunikacji na standardzie OpenAI API, wymagała jedynie zmiany adresu URL serwera modelu oraz wyłączenia sztucznego podziału na paczki --- dotychczasowy interfejs i logika przetwarzania po stronie backendu pozostały niezmienione, delegując pełne zarządzanie ruchem do silnika vLLM.
+Model Llama 3 8B-Instruct uruchomiono z podziałem tensorów na dwie karty Tesla T4 (\texttt{tensor-parallel-size=2}), co pozwoliło na wykorzystanie łącznie 32 GB pamięci VRAM. Aplikacja, dzięki oparciu komunikacji na standardzie OpenAI API, wymagała jedynie zmiany adresu URL serwera modelu oraz wyłączenia sztucznego podziału na paczki --- dotychczasowy interfejs i logika przetwarzania po stronie backendu pozostały niezmienione, delegując pełne zarządzanie ruchem do silnika vLLM.
 
 \subsection{Skalowalność dla dużych zbiorów danych}
 W celu ostatecznego porównania wydajności wykonano próbę obciążeniową polegającą na wygenerowaniu bazy danych zawierającej 10\,000 wierszy przetworzonych przez \gls{LLM}. Testy przeprowadzono na dwóch platformach sprzętowych oraz z dwoma silnikami inferencji (Ollama i vLLM).
@@ -110,8 +110,8 @@ W celu ostatecznego porównania wydajności wykonano próbę obciążeniową pol
     \label{fig:hardware_chart}
 \end{figure}
 
-Jak przedstawia Rysunek~\ref{fig:hardware_chart}, wygenerowanie 10\,000 wierszy na laptopie z serwerem Ollama zajęło ponad 8\,038 sekund (nieco ponad 2 godziny). Długotrwałe obciążenie karty graficznej wiązało się ze zjawiskiem tzw. \textit{thermal throttling} (zabezpieczenie przed przegrzaniem obniżające taktowanie procesora), przez co średni czas utworzenia jednego wiersza wzrósł z 0,52 do 0,80 sekundy. Mimo to aplikacja zniosła ten test poprawnie i zapisała całą tabelę w pliku bazy SQLite.
+Jak przedstawia Rysunek \ref{fig:hardware_chart}, wygenerowanie 10\,000 wierszy na laptopie z serwerem Ollama zajęło ponad 8\,038 sekund (nieco ponad 2 godziny). Długotrwałe obciążenie karty graficznej wiązało się ze zjawiskiem tzw. \textit{thermal throttling} (zabezpieczenie przed przegrzaniem obniżające taktowanie procesora), przez co średni czas utworzenia jednego wiersza wzrósł z 0,52 do 0,80 sekundy. Mimo to aplikacja zniosła ten test poprawnie i zapisała całą tabelę w pliku bazy SQLite.
 
-Dla porównania, ten sam schemat z serwerem Ollama uruchomiono w darmowym środowisku chmurowym Kaggle, dysponującym dwoma kartami Tesla T4 (łącznie 32~GB pamięci VRAM). Pełna próba 10\,000 wierszy na Kaggle zajęła aż 14\,860 sekund (ponad 4 godziny). Różnica wydajności względem laptopa wynika ze specyfikacji sprzętowych --- karty Tesla T4 oparte są na architekturze Turing \cite{turing_microarchitecture} z 2018 roku, która nie posiada ulepszonych jednostek obliczeniowych obecnych w nowoczesnych kartach z serii RTX (architektura Ada Lovelace \cite{ada_lovelace_microarchitecture}).
+Dla porównania, ten sam schemat z serwerem Ollama uruchomiono w darmowym środowisku chmurowym Kaggle, dysponującym dwoma kartami Tesla T4 (łącznie 32 GB pamięci VRAM). Pełna próba 10\,000 wierszy na Kaggle zajęła aż 14\,860 sekund (ponad 4 godziny). Różnica wydajności względem laptopa wynika ze specyfikacji sprzętowych --- karty Tesla T4 oparte są na architekturze Turing \cite{turing_microarchitecture} z 2018 roku, która nie posiada ulepszonych jednostek obliczeniowych obecnych w nowoczesnych kartach z serii RTX (architektura Ada Lovelace \cite{ada_lovelace_microarchitecture}).
 
-Zastąpienie serwera Ollama przez vLLM na tej samej platformie Kaggle przyniosło drastyczną poprawę wydajności. Generowanie 100 wierszy AI skróciło się ze 178 do zaledwie 18,3 sekundy (przyspieszenie blisko 10-krotne), a pełna próba 10\,000 wierszy ze 14\,860 do 1\,693 sekund (około 28 minut zamiast ponad 4 godzin) --- przyspieszenie blisko 9-krotne. Średni czas na wiersz z vLLM (0,17~s) okazał się ponad 4-krotnie lepszy niż najlepsza lokalna konfiguracja Ollama na laptopie RTX~5060 (0,52~s). Wynik ten potwierdza, że mechanizmy PagedAttention i \textit{continuous batching} zaimplementowane w vLLM pozwalają na znacznie efektywniejsze wykorzystanie chmurowych zasobów GPU niż tradycyjne podejście serwera Ollama.
+Zastąpienie serwera Ollama przez vLLM na tej samej platformie Kaggle przyniosło drastyczną poprawę wydajności. Generowanie 100 wierszy AI skróciło się ze 178 do zaledwie 18,3 sekundy (przyspieszenie blisko 10-krotne), a pełna próba 10\,000 wierszy ze 14\,860 do 1\,693 sekund (około 28 minut zamiast ponad 4 godzin) --- przyspieszenie blisko 9-krotne. Średni czas na wiersz z vLLM (0,17 s) okazał się ponad 4-krotnie lepszy niż najlepsza lokalna konfiguracja Ollama na laptopie RTX 5060 (0,52 s). Wynik ten potwierdza, że mechanizmy PagedAttention i \textit{continuous batching} zaimplementowane w vLLM pozwalają na znacznie efektywniejsze wykorzystanie chmurowych zasobów GPU niż tradycyjne podejście serwera Ollama.

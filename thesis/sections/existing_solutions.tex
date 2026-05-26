@@ -33,13 +33,14 @@ Najnowsza kategoria narzędzi do generowania danych syntetycznych wykorzystuje m
 
 Analiza powyższych kategorii wskazuje na istotną lukę. Brakuje narzędzia, które nie wymaga danych wejściowych, zapewnia wysoki realizm i kontekstowość danych tekstowych, gwarantuje ścisłą integralność relacyjną przy dużej skali oraz pozostaje efektywne kosztowo --- w szczególności nie wykorzystuje drogich wywołań \gls{LLM} do generowania prostych pól strukturalnych, takich jak data urodzenia czy numer telefonu.
 
-Poniższa tabela (Tabela~\ref{tab:solutions_comparison}) zestawia omówione podejścia z rozwiązaniem autorskim opracowanym w ramach niniejszej pracy.
+Poniższa tabela (Tabela \ref{tab:solutions_comparison}) zestawia omówione podejścia z rozwiązaniem autorskim opracowanym w ramach niniejszej pracy.
 
 \begin{table}[H]
     \centering
+    \resizebox{\textwidth}{!}{%
     \begin{tabular}{|l|c|c|c|c|}
         \hline
-        \textbf{Cecha}              & \textbf{Faker} & \textbf{Mockaroo} & \textbf{Gretel.ai} & \textbf{Autorskie rozwiązanie} \\
+        \textbf{Cecha}              & \textbf{Faker} & \textbf{Mockaroo} & \textbf{Gretel.ai} & \textbf{Rozw. autorskie} \\
         \hline
         Generowanie strukturalne    & TAK            & TAK               & TAK                & TAK                            \\
         \hline
@@ -53,7 +54,8 @@ Poniższa tabela (Tabela~\ref{tab:solutions_comparison}) zestawia omówione pode
         \hline
         Koszt                       & Darmowy        & Freemium          & Płatny             & Darmowy                        \\
         \hline
-    \end{tabular}
+    \end{tabular}%
+    }
     \caption{Porównanie narzędzi do generowania danych}
     \label{tab:solutions_comparison}
 \end{table}
