@@ -1,8 +1,30 @@
 \chapter{Wstęp}
-We współczesnym świecie dane stanowią jeden z najcenniejszych zasobów przedsiębiorstw, napędzając rozwój systemów informatycznych, analityki biznesowej oraz uczenia maszynowego. Jednakże, wraz ze wzrostem wolumenu przetwarzanych informacji, rośnie również ryzyko związane z ich bezpieczeństwem. W dobie rygorystycznych przepisów o ochronie danych osobowych (GDPR) \cite{european_parliament_2016_679} oraz rosnącej złożoności systemów informatycznych, pozyskanie realistycznych danych testowych, które zachowują spójność logiczną i kontekstową, stanowi istotne wyzwanie inżynierii oprogramowania.
 
-Tradycyjne podejście do testowania oprogramowania często opierało się na wykorzystaniu kopii produkcyjnych baz danych, poddanych procesom anonimizacji lub maskowania. Metody te, choć skuteczne w zachowaniu struktury danych, niosą ze sobą ryzyko reidentyfikacji osób fizycznych \cite{deanonymization_risks} oraz są trudne do skalowania w środowiskach Continuous Integration/Continuous Deployment (CI/CD). Z drugiej strony, proste generatory danych losowych (ang. random data generators) często tworzą zbiory niespójne semantycznie - np. generując recenzję produktu, która nie ma związku z jego kategorią, czy adresy niepasujące do kraju użytkownika. Taka niespójność utrudnia testowanie zaawansowanych algorytmów analitycznych i systemów rekomendacyjnych.
+We współczesnym świecie dane stanowią jeden z najcenniejszych zasobów przedsiębiorstw, napędzając rozwój systemów informatycznych, analityki biznesowej oraz uczenia maszynowego. Jednocześnie, wraz ze wzrostem wolumenu przetwarzanych informacji, rośnie ryzyko związane z ich bezpieczeństwem i zgodnością z przepisami. W dobie rygorystycznych regulacji o ochronie danych osobowych (GDPR) \cite{european_parliament_2016_679} oraz rosnącej złożoności systemów informatycznych, pozyskanie realistycznych danych testowych --- zachowujących spójność logiczną, referencyjną i kontekstową --- stanowi istotne wyzwanie współczesnej inżynierii oprogramowania.
 
-Przełomem w dziedzinie generowania treści stało się upowszechnienie dużych modeli językowych (\gls{LLM}). Modele takie jak GPT-4 czy Llama 3 potrafią generować tekst o wysokim stopniu realizmu, uwzględniając zadany kontekst \cite{llm_synthetic_data}. Jednak samo użycie \gls{LLM} jest procesem kosztownym obliczeniowo i wolnym, co czyni go niepraktycznym przy generowaniu milionów rekordów bazy danych. Istnieje zatem zapotrzebowanie na rozwiązania hybrydowe, łączące szybkość klasycznych algorytmów z kreatywnością sztucznej inteligencji.
+Problem ten ujawnia się szczególnie wyraźnie w procesach testowania i prototypowania aplikacji opartych o relacyjne bazy danych. Zespoły deweloperskie potrzebują zbiorów, które odzwierciedlają strukturę docelowego systemu (tabele, klucze obce, ograniczenia), ale jednocześnie zawierają treści wiarygodne semantycznie --- np. recenzje produktów powiązane z ich kategorią lub adresy zgodne z krajem użytkownika. Bez takiej spójności trudno jest wiarygodnie testować zaawansowane algorytmy analityczne, moduły raportowe czy systemy rekomendacyjne.
 
-Celem niniejszej pracy jest zaprojektowanie i implementacja narzędzia służącego do proceduralnego generowania relacyjnych zbiorów danych. Proponowane rozwiązanie integruje wydajne algorytmy pseudolosowe (biblioteka Faker) do generowania danych strukturalnych oraz modele \gls{LLM} do tworzenia danych kontekstowych. System został zaprojektowany w architekturze mikroserwisowej, wykorzystując konteneryzację Docker, kolejkę zadań Redis oraz asynchroniczne przetwarzanie, co pozwala na symulację środowisk produkcyjnych o wysokiej złożoności.
+Tradycyjne podejście do testowania oprogramowania często opierało się na wykorzystaniu kopii produkcyjnych baz danych, poddanych procesom anonimizacji lub maskowania. Metody te, choć skuteczne w zachowaniu struktury danych, niosą ze sobą ryzyko reidentyfikacji osób fizycznych \cite{deanonymization_risks} oraz są trudne do skalowania w środowiskach \gls{CI/CD}. Z drugiej strony proste generatory danych losowych (ang. \emph{random data generators}) często tworzą zbiory niespójne semantycznie, co ogranicza ich przydatność w scenariuszach wymagających realizmu treści, a nie wyłącznie poprawności składniowej rekordów.
+
+Przełomem w dziedzinie generowania treści stało się upowszechnienie dużych modeli językowych (\gls{LLM}). Modele takie jak GPT-4 czy Llama~3 potrafią generować tekst o wysokim stopniu realizmu, uwzględniając zadany kontekst \cite{llm_synthetic_data}. Jednak samo użycie \gls{LLM} do masowego wypełniania tabel jest procesem kosztownym obliczeniowo i wolnym, co czyni je niepraktycznym przy generowaniu milionów rekordów. Dodatkowo modele probabilistyczne mogą naruszać integralność referencyjną lub strukturę formatów wymiany danych (\gls{JSON}, \gls{SQL}). Z tego powodu uzasadnione jest poszukiwanie rozwiązań hybrydowych, łączących szybkość klasycznych algorytmów pseudolosowych z kreatywnością i rozumieniem kontekstu przez sztuczną inteligencję.
+
+Aby precyzyjnie określić miejsce proponowanego narzędzia, konieczne jest zestawienie dostępnych na rynku podejść do generowania danych syntetycznych.
+
+\section*{Przegląd istniejących rozwiązań}
+\input{sections/existing_solutions.tex}
+
+\section*{Cel i zakres pracy}
+
+Celem niniejszej pracy jest zaprojektowanie i implementacja narzędzia służącego do proceduralnego generowania relacyjnych zbiorów danych testowych. Proponowane rozwiązanie integruje wydajne algorytmy pseudolosowe (biblioteka Faker) do generowania danych strukturalnych oraz modele \gls{LLM} --- zarówno chmurowe, jak i uruchamiane lokalnie --- do tworzenia danych kontekstowych. System został zaprojektowany w architekturze mikroserwisowej, wykorzystując konteneryzację Docker, kolejkę zadań Redis oraz asynchroniczne przetwarzanie zadań (Celery), co umożliwia symulację środowisk produkcyjnych o wysokiej złożoności bez blokowania interfejsu użytkownika.
+
+Zakres pracy obejmuje:
+\begin{itemize}
+    \item analizę dostępnych technologii i uzasadnienie wyboru stosu implementacyjnego,
+    \item specyfikację wymagań funkcjonalnych i niefunkcjonalnych systemu,
+    \item opis metodyki realizacji pracy,
+    \item implementację aplikacji webowej wraz z silnikiem generowania danych,
+    \item testy poprawności, wydajności oraz bezpieczeństwa,
+    \item omówienie napotkanych problemów implementacyjnych i wniosków końcowych.
+\end{itemize}
+
+Praca została podzielona na następujące rozdziały. Rozdział dotyczący analizy technologii przedstawia porównanie frameworków backendowych i frontendowych. Kolejny rozdział definiuje wymagania i funkcjonalność systemu. Następnie opisano metodykę pracy, szczegóły implementacji, wyniki testów oraz wyzwania związane m.in. z optymalizacją generowania przez \gls{LLM}. Pracę zamyka rozdział podsumowujący uzyskane rezultaty i możliwe kierunki dalszego rozwoju.

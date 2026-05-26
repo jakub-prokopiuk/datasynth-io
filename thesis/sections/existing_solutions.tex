@@ -1,43 +1,39 @@
-\chapter{Istniejące rozwiązania}
-Rynek narzędzi do generowania danych syntetycznych jest obecnie dynamicznie rozwijającym się obszarem, który można podzielić na trzy główne kategorie: rozwiązania algorytmiczne, rozwiązania oparte na uczeniu maszynowym oraz nowo powstające rozwiązania oparte o modele językowe. Poniższa analiza przedstawia wiodące narzędzia w tych kategoriach, wskazując ich zalety oraz ograniczenia w kontekście generowania spójnych relacyjnie baz danych.
+Rynek narzędzi do generowania danych syntetycznych jest obecnie dynamicznie rozwijającym się obszarem, który można podzielić na trzy główne kategorie: rozwiązania algorytmiczne, rozwiązania oparte na uczeniu maszynowym oraz rozwiązania wykorzystujące modele językowe. Poniższa analiza przedstawia wiodące narzędzia w tych kategoriach, wskazując ich zalety oraz ograniczenia w kontekście generowania spójnych relacyjnie baz danych.
 
-\section{Rozwiązania algorytmiczne i quasi-losowe}
+\subsection*{Rozwiązania algorytmiczne i quasi-losowe}
 Jeszcze do niedawna były to najpopularniejsze narzędzia do generowania danych syntetycznych. Sztandarowe narzędzia w tej kategorii to m.in.:
-\subsection*{Biblioteka Faker}
+
+\subsubsection*{Biblioteka Faker}
 Faker \cite{fakerjs} to biblioteka open-source dostępna w wielu językach programowania (Python, JavaScript, Ruby), umożliwiająca generowanie różnorodnych danych losowych, takich jak imiona, adresy, numery telefonów czy dane finansowe.
 \begin{itemize}
     \item Zalety: Bardzo wysoka wydajność (generowanie odbywa się w czasie rzeczywistym), brak kosztów (narzędzie jest open-source), determinizm (możliwość odtworzenia danych przy użyciu seed).
     \item Wady: Brak kontekstualnej spójności między generowanymi danymi. Wygenerowana ,,recenzja produktu'' to zazwyczaj zbiór losowych słów z łaciny lub zdań niemających sensu logicznego. Znaczącą wadą jest również brak wbudowanej obsługi złożonych relacji między tabelami (użytkownik musi sam zaprogramować logikę kluczy obcych).
 \end{itemize}
-\subsection*{Mockaroo}
+
+\subsubsection*{Mockaroo}
 Mockaroo to popularne narzędzie webowe (\gls{SaaS}), które pozwala definiować schematy danych w GUI i pobierać je jako \gls{CSV}/\gls{SQL}/\gls{JSON}.
 \begin{itemize}
     \item Zalety: Intuicyjny interfejs użytkownika, szeroki zakres typów danych, możliwość eksportu do różnych formatów, wsparcie dla relacji między tabelami za pomocą prostych skryptów pisanych w Ruby.
     \item Wady: W wersji darmowej generowanie limitowane jest do 1000 wierszy. Mimo zaawansowania, nadal opiera się głównie na losowaniu ze słowników. Funkcje sztucznej inteligencji są ograniczone lub dodatkowo płatne.
 \end{itemize}
-\section{Rozwiązania oparte na modelach generatywnych}
-Ta grupa narzędzi (np. Gretel.ai \cite{gretel_platform}, Mostly AI \cite{mostly}) posiada duże problemy z prywatnością danych. Działają one na zasadzie: ,,Wgraj nam swoją prawdziwą bazę danych, a my nauczymy model jej schematu i wygenerujemy nową, która wygląda tak samo, ale nie zawiera danych osobowych''.
+
+\subsection*{Rozwiązania oparte na modelach generatywnych}
+Ta grupa narzędzi (np. Gretel.ai \cite{gretel_platform}, Mostly AI \cite{mostly}) wiąże się z istotnymi wyzwaniami dotyczącymi prywatności danych. Działają one na zasadzie: ,,Wgraj nam swoją prawdziwą bazę danych, a my nauczymy model jej schematu i wygenerujemy nową, która wygląda tak samo, ale nie zawiera danych osobowych''.
 \begin{itemize}
     \item Zalety: Potrafią generować dane o wysokim stopniu realizmu, zachowując statystyczne właściwości oryginalnego zbioru.
     \item Wady: Wymagają dostępu do rzeczywistych danych, co może naruszać przepisy o ochronie danych osobowych. Wymagają również danych wejściowych, przez co nie nadają się do tworzenia danych do nowo powstających systemów, gdzie nie ma jeszcze żadnej bazy danych, na której można by uczyć model. Koszty licencyjne są wysokie, a skalowalność ograniczona przez infrastrukturę dostawcy.
 \end{itemize}
-\section{Rozwiązania oparte na modelach językowych}
-Najnowsza kategoria narzędzi do generowania danych syntetycznych wykorzystuje możliwości \gls{LLM}, takich jak GPT-4 czy Claude. Przykładowo, możemy poprosić model o wygenerowanie danych do tabeli ,,Recenzje produktów'', podając mu kontekst (np. kategorie produktów, cechy użytkowników).
+
+\subsection*{Rozwiązania oparte na modelach językowych}
+Najnowsza kategoria narzędzi do generowania danych syntetycznych wykorzystuje możliwości \gls{LLM}, takich jak GPT-4 czy Claude. Przykładowo, można poprosić model o wygenerowanie danych do tabeli ,,Recenzje produktów'', podając mu kontekst (np. kategorie produktów, cechy użytkowników).
 \begin{itemize}
     \item Zalety: Wysoki realizm tekstowy, kreatywność, rozumienie kontekstu.
     \item Wady: Wysokie koszty operacyjne, ograniczenia szybkości, model może ,,wymyślić'' nieistniejące ID lub zgubić strukturę \gls{JSON}/\gls{SQL} przy dużej ilości danych. Przez ograniczenia kontekstowe, generowanie dużych zbiorów danych wymaga podziału na mniejsze partie, co komplikuje zachowanie spójności referencyjnej między tabelami.
 \end{itemize}
-\section{Proponowane rozwiązanie}
-Analiza powyższych rozwiązań wskazuje na istotną lukę rynkową. Brakuje narzędzia, które:
-\begin{itemize}
-    \item nie wymaga danych wejściowych,
-    \item zapewnia wysoki realizm i kontekstowość danych tekstowych,
-    \item gwarantuje ścisłą integralność relacyjną przy dużej skali,
-    \item jest efektywne kosztowo (nie generuje prostych danych typu ,,data urodzenia'' przez drogie \gls{LLM}).
-\end{itemize}
 
-\section{Porównanie rozwiązań}
-Poniższa tabela (Tabela \ref{tab:solutions_comparison}) przedstawia porównanie analizowanych narzędzi z rozwiązaniem autorskim.
+Analiza powyższych kategorii wskazuje na istotną lukę. Brakuje narzędzia, które nie wymaga danych wejściowych, zapewnia wysoki realizm i kontekstowość danych tekstowych, gwarantuje ścisłą integralność relacyjną przy dużej skali oraz pozostaje efektywne kosztowo --- w szczególności nie wykorzystuje drogich wywołań \gls{LLM} do generowania prostych pól strukturalnych, takich jak data urodzenia czy numer telefonu.
+
+Poniższa tabela (Tabela~\ref{tab:solutions_comparison}) zestawia omówione podejścia z rozwiązaniem autorskim opracowanym w ramach niniejszej pracy.
 
 \begin{table}[H]
     \centering
