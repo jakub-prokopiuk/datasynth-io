@@ -1,10 +1,9 @@
-\section{Testy bezpieczeństwa}
-W celu zapewnienia wysokiego poziomu bezpieczeństwa, przeprowadzono serię testów z wykorzystaniem narzędzi klasy \gls{SCA} oraz \gls{SAST}.
+W celu zapewnienia wysokiego poziomu bezpieczeństwa przeprowadzono serię testów z wykorzystaniem narzędzi klasy \gls{SCA} oraz \gls{SAST}.
 
 Do identyfikacji znanych podatności w wykorzystywanych bibliotekach użyto narzędzi \texttt{npm audit} (dla warstwy frontendowej) oraz \texttt{pip-audit} (dla warstwy backendowej).
 
 \begin{itemize}
-    \item Frontend: Analiza początkowo wykazała obecność podatności w bibliotece \texttt{axios} (wersja $\le$ 1.3.4). W ramach działań naprawczych, zaktualizowano bibliotekę do najnowszej stabilnej wersji, eliminując zidentyfikowane zagrożenia.
+    \item Frontend: Analiza początkowo wykazała obecność podatności w bibliotece \texttt{axios} (wersja $\le$ 1.3.4). W ramach działań naprawczych zaktualizowano bibliotekę do najnowszej stabilnej wersji, eliminując zidentyfikowane zagrożenia.
     \item Backend: Audyt zależności Pythonowych nie wykazał krytycznych podatności w głównych bibliotekach produkcyjnych (FastAPI, Uvicorn, SQLAlchemy).
 \end{itemize}
 
@@ -14,5 +13,3 @@ Problem ten został rozwiązany poprzez wprowadzenie konfiguracji opartej na zmi
 \begin{verbatim}
     allow_origins=os.getenv("ALLOWED_ORIGINS").split(",")
 \end{verbatim}
-
-
