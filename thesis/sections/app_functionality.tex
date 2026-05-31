@@ -2,7 +2,7 @@
 
 Proces wytwarzania oprogramowania wymaga precyzyjnego zdefiniowania założeń projektowych. W przypadku systemów wykorzystujących generatywną sztuczną inteligencję, kluczowe jest wyznaczenie granic między deterministycznym działaniem algorytmów a probabilistyczną naturą modeli językowych. Poniższy rozdział definiuje specyfikację funkcjonalną i niefunkcjonalną projektowanego systemu, stanowiącą fundament dla implementacji architektury mikroserwisowej opisanej w kolejnych częściach pracy.
 
-\section{Wymagania funkcjonalne}
+\section*{Wymagania funkcjonalne}
 Głównym celem systemu jest umożliwienie użytkownikom generowania syntetycznych, relacyjnych zbiorów danych o wysokim stopniu realizmu, z wykorzystaniem hybrydowego silnika łączącego metody regułowe i modele \gls{LLM}.
 
 System powinien udostępniać graficzny interfejs do modelowania struktury bazy danych. Użytkownik powinien mieć możliwość definiowania tabel, kolumn oraz typów danych, wybierając spośród trzech głównych generatorów:
@@ -24,7 +24,7 @@ Poza standardowym eksportem do plików płaskich (\gls{JSON}, \gls{CSV}) czy eks
 \subsection*{Zarządzanie projektami i szablonami}
 Zalogowani użytkownicy powinni mieć możliwość zapisywania zdefiniowanych schematów w chmurze, co pozwoli na ich późniejszą edycję i ponowne wykorzystanie. System powinien również wspierać import i eksport konfiguracji, ułatwiając współdzielenie schematów w zespołach deweloperskich.
 
-\section{Wymagania niefunkcjonalne}
+\section*{Wymagania niefunkcjonalne}
 Wymagania niefunkcjonalne określają atrybuty jakościowe systemu, które są niezbędne do jego wdrożenia w środowisku produkcyjnym, ze szczególnym naciskiem na wydajność, bezpieczeństwo i skalowalność.
 
 \subsection*{Architektura asynchroniczna i wydajność}

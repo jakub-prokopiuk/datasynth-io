@@ -3,7 +3,7 @@
 
 W niniejszym rozdziale przedstawiono szczegóły implementacyjne zrealizowanego systemu generatora danych syntetycznych. Opisano architekturę rozwiązania, zastosowane technologie oraz kluczowe komponenty zarówno po stronie serwera (backend), jak i klienta (frontend). Przedstawiono również sposób konfiguracji środowiska uruchomieniowego oraz proces wdrażania aplikacji przy użyciu konteneryzacji.
 
-\section{Architektura systemu}
+\section*{Architektura systemu}
 System został zaprojektowany w architekturze klient-serwer, z wyraźnym podziałem na warstwę prezentacji (frontend) oraz warstwę logiki biznesowej i dostępu do danych (backend). Komunikacja między tymi warstwami odbywa się za pośrednictwem interfejsu \gls{REST} \gls{API} \cite{rest_fielding}. Całość systemu została skonteneryzowana przy użyciu platformy Docker, co zapewnia łatwość wdrożenia i spójność środowiska uruchomieniowego. Poniżej przedstawiono schemat architektury systemu (Rysunek \ref{fig:architecture_diagram}).
 
 \begin{figure}[H]
@@ -23,7 +23,7 @@ Główne elementy systemu to:
     \item Ollama (\gls{LLM}): Lokalny serwer modeli językowych, wykorzystywany do generowania danych wymagających kreatywności i kontekstu \cite{ollama}.
 \end{itemize}
 
-\section{Implementacja backendowa}
+\section*{Implementacja backendowa}
 Warstwa backendowa została zaimplementowana w języku Python, z wykorzystaniem frameworka FastAPI. Wybór ten podyktowany był wysoką wydajnością FastAPI, wbudowaną obsługą asynchroniczności oraz automatycznym generowaniem dokumentacji \gls{API} (Swagger \gls{UI}).
 
 \subsection*{Struktura projektu}
@@ -63,7 +63,7 @@ Użytkownik, zlecając generowanie danych, wysyła żądanie do endpointu \textt
 \subsection*{Bezpieczeństwo}
 System implementuje mechanizm uwierzytelniania oparty na tokenach \gls{JWT} \cite{jwt_rf7519}. Hasła użytkowników są bezpiecznie przechowywane w bazie danych w formie zahaszowanej (przy użyciu algorytmu bcrypt). Każdy chroniony endpoint \gls{API} weryfikuje ważność tokenu przed przetworzeniem żądania, co realizowane jest za pomocą mechanizmu Dependency Injection w FastAPI.
 
-\section{Implementacja frontendowa}
+\section*{Implementacja frontendowa}
 Warstwa prezentacji została zrealizowana jako aplikacja typu Single Page Application (\gls{SPA}) przy użyciu biblioteki React. Do budowania projektu wykorzystano narzędzie Vite, a za stylowanie odpowiada framework Tailwind \gls{CSS}.
 
 \subsection*{Szczegółowy opis interfejsu}
@@ -226,7 +226,7 @@ Stan aplikacji jest zarządzany głównie przy użyciu hooków React (\texttt{us
 
 Do komunikacji z backendem wykorzystano bibliotekę \texttt{axios}. Zaimplementowano instancję klienta \gls{API} (w pliku \texttt{api.js}), która automatycznie dołącza token autoryzacyjny do każdego żądania oraz obsługuje błędy odpowiedzi serwera (np. automatyczne wylogowanie po wygaśnięciu tokenu).
 
-\section{Implementacja algorytmów}
+\section*{Implementacja algorytmów}
 
 \subsection*{Algorytm rozwiązywania zależności (sortowanie topologiczne)}
 Aby zapewnić poprawność relacyjną generowanych danych, niezbędne jest ustalenie odpowiedniej kolejności przetwarzania tabel. Problem ten sprowadza się do posortowania wierzchołków skierowanego grafu zależności w taki sposób, aby dla każdej krawędzi $(u, v)$ wierzchołek $u$ pojawiał się przed wierzchołkiem $v$.
@@ -286,7 +286,7 @@ Do wizualizacji postępu w czasie rzeczywistym wykorzystano protokół WebSocket
 
 Frontend (komponent \texttt{GenerationModal}) subskrybuje te wiadomości i na ich podstawie aktualizuje pasek postępu. Po otrzymaniu statusu \texttt{completed}, połączenie jest zamykane, a interfejs przechodzi do widoku wyników.
 
-\section{Infrastruktura i konteneryzacja}
+\section*{Infrastruktura i konteneryzacja}
 Całe środowisko uruchomieniowe zostało zdefiniowane w pliku \texttt{docker-compose.yml}. Definiuje on następujące serwisy:
 \begin{itemize}
     \item \texttt{backend}: Kontener z aplikacją FastAPI.

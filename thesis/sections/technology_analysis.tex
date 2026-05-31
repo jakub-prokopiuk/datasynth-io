@@ -2,7 +2,7 @@
 
 Wybór odpowiednich narzędzi jest kluczowym elementem procesu projektowania każdego systemu informatycznego. Decyzje podjęte na tym etapie mają bezpośredni wpływ na wydajność, skalowalność, bezpieczeństwo oraz łatwość utrzymania aplikacji w przyszłości. W niniejszym rozdziale przedstawiono analizę dostępnych rozwiązań oraz uzasadniono wybór konkretnych technologii wykorzystanych w projekcie.
 
-\section{Język programowania backend: Python}
+\section*{Język programowania backend: Python}
 Język Python został wybrany jako fundament warstwy serwerowej. Decyzja ta podyktowana była kilkoma czynnikami:
 \begin{enumerate}
     \item Ekosystem AI/ML: Python jest niekwestionowanym liderem w dziedzinie sztucznej inteligencji. Biblioteki takie jak \texttt{openai} czy \texttt{pandas} posiadają natywne wsparcie dla tego języka, co znacznie upraszcza integrację z modelami \gls{LLM}.
@@ -10,7 +10,7 @@ Język Python został wybrany jako fundament warstwy serwerowej. Decyzja ta pody
     \item Szybkość prototypowania: Zwięzła składnia Pythona pozwala na szybkie tworzenie i testowanie nowych funkcjonalności.
 \end{enumerate}
 
-\section{Framework webowy: FastAPI vs Flask vs Django}
+\section*{Framework webowy: FastAPI vs Flask vs Django}
 Do budowy \gls{API} rozważano trzy najpopularniejsze frameworki Pythonowe: Django\cite{django}, Flask\cite{flask} oraz FastAPI\cite{fastapi}.
 Różnią się one przede wszystkim filozofią projektową. Django to duży framework, oferujący gotowe rozwiązania (ORM, panel administracyjny, uwierzytelnianie), co jednak wiąże się z dużym narzutem. Flask i FastAPI to mikroframeworki, dostarczające jedynie niezbędnych narzędzi do obsługi żądań HTTP, pozostawiając programiście swobodę w doborze bibliotek (np. do bazy danych).
 
@@ -33,7 +33,7 @@ Różnią się one przede wszystkim filozofią projektową. Django to duży fram
 
 Wybrano FastAPI ze względu na natywną obsługę asynchroniczności (kluczowe przy długotrwałych zapytaniach do \gls{LLM}) oraz automatyczną walidację danych przy użyciu modeli Pydantic, co znacząco podnosi bezpieczeństwo typów.
 
-\section{Warstwa prezentacji: React}
+\section*{Warstwa prezentacji: React}
 Dla interfejsu użytkownika zdecydowano się na model oparty na technologii jednej strony (\gls{SPA})\cite{spa}, co pozwala na płynne przechodzenie między widokami bez konieczności przeładowywania całej strony. W procesie wyboru technologii rozważano trzy wiodące rozwiązania: Angular\cite{angular}, Vue.js\cite{vuejs} oraz React \cite{react}.
 
 Aby dokonać obiektywnego wyboru, zdefiniowano następujące kryteria porównawcze:
@@ -80,7 +80,7 @@ Jako narzędzie budujące i środowisko uruchomieniowe wybrano Vite \cite{vite},
     \item Optymalizacja kodu: Vite w trybie produkcyjnym wykorzystuje narzędzie Rollup\cite{rollup}, co pozwala na zaawansowane optymalizacje, takie jak tree-shaking (usuwanie martwego kodu) oraz lazy loading (dzielenie kodu na mniejsze fragmenty ładowane na żądanie). Dzięki temu finalny plik aplikacji jest mniejszy i ładuje się szybciej.
 \end{itemize}
 
-\section{Infrastruktura dodatkowa}
+\section*{Infrastruktura dodatkowa}
 Mimo że generowane dane mogą mieć różną strukturę, zdecydowano się na relacyjną bazę danych PostgreSQL \cite{postgresql} do przechowywania metadanych systemu (użytkownicy, projekty, historia zadań).
 Głównym argumentem była potrzeba zachowania ścisłej spójności transakcyjnej (ACID \cite{acid_transaction}) przy zarządzaniu projektami oraz natywne wsparcie dla typu danych JSONB. Pozwala to na elastyczne przechowywanie konfiguracji schematów (które są strukturami \gls{JSON}) przy jednoczesnym zachowaniu zalet języka \gls{SQL} do zapytań analitycznych.
 
@@ -90,5 +90,5 @@ Generowanie tysięcy rekordów, szczególnie z użyciem \gls{LLM}, jest procesem
     \item Redis\cite{redis}: Pełni rolę brokera wiadomości, przechowując informacje o zadaniach do wykonania oraz ich wynikach.
 \end{itemize}
 
-\section{Konteneryzacja: Docker}
+\section*{Konteneryzacja: Docker}
 Zastosowanie konteneryzacji było wymogiem niefunkcjonalnym, mającym na celu zapewnienie powtarzalności środowiska uruchomieniowego \cite{docker}. Definicja środowiska w pliku \texttt{docker-compose.yml} pozwala na uruchomienie całego stosu (Backend, Frontend, Baza Danych, Redis, Worker, \gls{LLM} Server) jedną komendą, eliminując problem niezgodności w działaniu na różnych maszynach deweloperskich.

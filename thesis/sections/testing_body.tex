@@ -1,6 +1,6 @@
 Proces weryfikacji poprawności działania systemu został podzielony na testy automatyczne warstwy backendowej, testy manualne interfejsu użytkownika, testy \gls{E2E} oraz audyt bezpieczeństwa. Takie podejście pozwoliło na wykrycie błędów zarówno na poziomie logicznym, jak i funkcjonalnym.
 
-\subsection{Testy jednostkowe i integracyjne backendu}
+\subsection*{Testy jednostkowe i integracyjne backendu}
 Warstwa serwerowa aplikacji, zaimplementowana w języku Python, została pokryta testami automatycznymi przy użyciu frameworka \texttt{pytest}. Głównym celem tych testów była weryfikacja poprawności działania poszczególnych endpointów \gls{API} oraz logiki biznesowej generatora danych.
 
 Testy, zlokalizowane w katalogu \texttt{backend/tests}, obejmują następujące scenariusze:
@@ -25,7 +25,7 @@ def test_generate_endpoint(client, auth_headers):
     assert data["status"] == "success"
 \end{verbatim}
 
-\subsection{Testy manualne interfejsu użytkownika}
+\subsection*{Testy manualne interfejsu użytkownika}
 Ze względu na dynamiczny charakter interfejsu, duży nacisk położono na testy manualne. Scenariusze testowe obejmowały pełne ścieżki użytkownika (ang. \emph{User Journeys}).
 
 \subsubsection*{Scenariusz 1: Utworzenie schematu sklepu internetowego}
@@ -45,7 +45,7 @@ Testowano zachowanie systemu przy generowaniu pól typu \texttt{llm} oraz popraw
     \item Obserwacja: Interfejs pozostawał responsywny podczas oczekiwania na odpowiedź z \gls{API} OpenAI, a pasek postępu aktualizował się w czasie rzeczywistym. Po zakończeniu zadania wygenerowano kompletny zestaw rekordów zgodny ze schematem. Szczegóły pomiarów wydajnościowych oraz optymalizacji opisano w Sekcji \ref{sec:llm_optimization}.
 \end{enumerate}
 
-\subsection{Testy End-to-End (\texorpdfstring{\gls{E2E}}{E2E})}
+\subsection*{Testy End-to-End (\texorpdfstring{\gls{E2E}}{E2E})}
 W celu weryfikacji integralności całego systemu wprowadzono testy typu \gls{E2E}, symulujące rzeczywiste scenariusze użytkowania --- od interfejsu w przeglądarce, przez warstwę \gls{API}, aż po logikę biznesową i bazy danych.
 
 Do realizacji testów \gls{E2E} wybrano framework Playwright. Jest on nowoczesnym narzędziem umożliwiającym automatyzację testów w wielu przeglądarkach (Chromium, Firefox, WebKit) oraz zapewniającym wysoką niezawodność dzięki mechanizmom automatycznego oczekiwania na elementy interfejsu.
@@ -60,5 +60,5 @@ Zaimplementowany scenariusz testowy pokrywa kluczową ścieżkę krytyczną \cit
 
 Dzięki zastosowaniu symulowania odpowiedzi backendu w wybranych testach możliwe jest izolowane testowanie warstwy frontendowej, co przyspiesza proces deweloperski i uniezależnia testy interfejsu od dostępności zewnętrznych usług czy modeli \gls{LLM}.
 
-\subsection{Testy bezpieczeństwa}
+\subsection*{Testy bezpieczeństwa}
 \input{sections/security_testing_body.tex}

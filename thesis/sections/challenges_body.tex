@@ -1,11 +1,11 @@
 Stworzenie aplikacji łączącej konwencjonalne generowanie danych z wykorzystaniem modeli sztucznej inteligencji wiązało się z szeregiem problemów technicznych. Poniżej opisano najistotniejsze z nich oraz przyjęte rozwiązania --- z wyjątkiem kwestii wydajności generowania przez \gls{LLM}, które ze względu na swój zasięg omówiono osobno w kolejnej sekcji.
 
-\subsection{Informowanie użytkownika o postępie}
+\subsection*{Informowanie użytkownika o postępie}
 Jednym z istotnych problemów na początku prac było płynne wyświetlanie paska postępu generowania na stronie internetowej, podczas gdy cały proces odbywał się w tle na serwerze.
 
 Standardowe zapytania \gls{HTTP} nie sprawdzają się najlepiej w tym zastosowaniu, ponieważ przeglądarka musiałaby nieustannie pytać serwer o aktualny status. Przy większej liczbie użytkowników spowodowałoby to znaczne przeciążenie sieci. Zdecydowano się na wykorzystanie protokołu WebSocket. W backendzie utworzono specjalny endpoint \texttt{/ws/jobs/\{job\_id\}}, do którego podłącza się aplikacja. Program działający w tle regularnie zapisuje swój postęp do pamięci współdzielonej, a połączenie WebSocket odczytuje te dane co pół sekundy i przesyła na bieżąco do przeglądarki. Dzięki temu interfejs działa responsywnie i płynnie aktualizuje pasek postępu.
 
-\subsection{Wymuszanie unikalności danych z modelu LLM}
+\subsection*{Wymuszanie unikalności danych z modelu LLM}
 Modele językowe charakteryzują się niedeterministycznym działaniem, co stanowiło wyzwanie w przypadku generowania kolumn, dla których zaznaczono wymóg unikalności (np. dla numerów seryjnych generowanych przez AI).
 
 Podczas testów zauważono, że przy ustawieniu wysokiej ,,temperatury'' (parametr \texttt{temperature}) model często tracił kontekst i nie trzymał się narzuconego formatu. Z kolei przy niskiej temperaturze wykazywał tendencję do generowania tych samych słów i schematów. Aby zapobiec powstawaniu duplikatów, zaimplementowano własny mechanizm weryfikacji:
@@ -16,10 +16,10 @@ Podczas testów zauważono, że przy ustawieniu wysokiej ,,temperatury'' (parame
     \item Aby pomóc modelowi w znalezieniu nowej odpowiedzi, przy kolejnych próbach aplikacja delikatnie zwiększa parametr \texttt{temperature} (+0.1), co zachęca algorytm do większej różnorodności w doborach słów.
 \end{enumerate}
 
-\subsection{Zależności cykliczne}
+\subsection*{Zależności cykliczne}
 Aplikacja sortuje tabele przed generowaniem, aby zapewnić odpowiednią kolejność ich tworzenia (np. najpierw użytkownicy, potem ich opinie). Problem pojawiał się, gdy Tabela A wymagała klucza z Tabeli B, a Tabela B jednocześnie wymagała klucza z Tabeli A.
 
 Tworzył się wówczas tzw. cykl zależności, który zapętlał program. Na obecnym etapie przyjęto założenie, że użytkownik musi świadomie projektować strukturę bazy i unikać takich sytuacji w interfejsie. W przyszłości planowane jest dodanie dodatkowej walidacji, która blokowałaby zapis schematu w przypadku wykrycia ,,błędnego koła''.
 
-\subsection{Odporność na błędy łączności z API}
+\subsection*{Odporność na błędy łączności z API}
 Komunikacja z zewnętrznymi interfejsami, takimi jak API usługi OpenAI, niesie ze sobą ryzyko sporadycznej utraty połączenia sieciowego lub przeciążeń po stronie dostawcy chmury. W kodzie serwera uodporniono wywołania API za pomocą precyzyjnych bloków wychwytywania wyjątków \texttt{try-except}. W przypadku wystąpienia \textit{timeoutu} (braku odpowiedzi sieciowej dla konkretnego zapytania) system nie odrzuca całego procesu po wielu godzinach pracy. Kod zachowuje odpowiedni tekst błędu (np. \texttt{Connection error}), wpisując go bezpiecznie w odpowiednią komórkę bazy danych tabeli. Pozwala to na płynne kontynuowanie generowania kolejnego wiersza, uniemożliwiając restart skryptu i pozostawiając operatorowi wgląd w omyłkowy element poprzez odnalezienie komunikatu błędu w docelowym pliku Excel bądź CSV.

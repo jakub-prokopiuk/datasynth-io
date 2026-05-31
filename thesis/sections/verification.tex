@@ -1,7 +1,7 @@
-\chapter{Weryfikacja systemu, wyzwania i wnioski}
+\chapter{Weryfikacja systemu}
 \label{cha:verification}
 
-Ostatnia część pracy łączy weryfikację poprawności i bezpieczeństwa zaimplementowanego systemu, omówienie napotkanych problemów technicznych wraz z ich rozwiązaniami oraz podsumowanie uzyskanych rezultatów. Takie ujęcie pozwala oddzielić testy funkcjonalne od analizy wydajnościowej --- która bezpośrednio wynika z wyzwań związanych z integracją modeli \gls{LLM} --- i zakończyć pracę spójnymi wnioskami.
+Rozdział ten przedstawia weryfikację poprawności i bezpieczeństwa zaimplementowanego systemu, omówienie napotkanych problemów technicznych wraz z ich rozwiązaniami oraz analizę wydajności generowania danych przez modele \gls{LLM}. Testy funkcjonalne i bezpieczeństwa potwierdzają zgodność aplikacji z założeniami projektowymi, natomiast pomiary wydajnościowe --- wyzwania wynikające bezpośrednio z integracji sztucznej inteligencji z tradycyjnym silnikiem generowania danych.
 
 \section{Testy poprawności i bezpieczeństwa}
 \input{sections/testing_body.tex}
@@ -12,7 +12,3 @@ Ostatnia część pracy łączy weryfikację poprawności i bezpieczeństwa zaim
 \section{Wydajność i optymalizacja generowania}
 \label{sec:llm_optimization}
 \input{sections/performance_body.tex}
-
-\section{Podsumowanie i wnioski}
-\label{sec:summary}
-\input{sections/summary_body.tex}
