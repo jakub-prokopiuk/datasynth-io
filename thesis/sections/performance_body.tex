@@ -14,30 +14,69 @@ Kluczem do przyspieszenia procesu okazało się grupowanie zapytań w mniejsze p
 Dodatkowo zastosowano mechanizm \texttt{asyncio.Semaphore}, który zezwala serwerowi Ollama na przetwarzanie kilku takich paczek jednocześnie (domyślnie 8 zapytań w tle). Jeśli wystąpi błąd formatowania dla danej paczki (np. model pominie znak w odpowiedzi \gls{JSON}), uszkodzony fragment jest wyłapywany i przerabiany bezpiecznym, pojedynczym zapytaniem, aby nie psuć całego postępu generowania.
 
 \subsection*{Dobór parametrów optymalizacji}
-W celu dobrania optymalnych parametrów przeprowadzono pięć pomiarów na stałej próbce 100 wierszy z polami generowanymi przez \gls{LLM}. Każda próba dotyczyła innego sposobu wysyłania zapytań do modelu. Pomiary wykonano na laptopie z kartą NVIDIA RTX~5060, z modelem Llama~3 w Ollama --- ten sam sprzęt i ta sama próbka we wszystkich wierszach tabeli.
+W celu dobrania optymalnych parametrów przeprowadzono pięć pomiarów na stałej próbce 100 wierszy z polami generowanymi przez \gls{LLM}. Każda próba dotyczyła innego sposobu wysyłania zapytań do modelu. Pomiary wykonano na laptopie z kartą NVIDIA RTX 5060, z modelem Llama 3 w Ollama --- ten sam sprzęt i ta sama próbka we wszystkich wierszach tabeli.
 
 \begin{table}[H]
     \centering
     \begin{tabular}{|c|c|p{7cm}|}
         \hline
-        \textbf{Próba optymalizacji} & \textbf{Czas [s]} & \textbf{Sposób generowania} \\
+        \textbf{Próba optymalizacji} & \textbf{Czas [s]} & \textbf{Sposób generowania}                              \\
         \hline
-        1 & 129,52 & Jeden wiersz na raz --- wersja początkowa \\
+        1                            & 129,52            & Jeden wiersz na raz --- wersja początkowa                \\
         \hline
-        2 & 218,88 & Wiele równoległych zapytań, ale nadal po jednym wierszu \\
+        2                            & 218,88            & Wiele równoległych zapytań, ale nadal po jednym wierszu  \\
         \hline
-        3 & 63,43 & Kilka wierszy łączonych w jedno zapytanie (pakietowanie) \\
+        3                            & 63,43             & Kilka wierszy łączonych w jedno zapytanie (pakietowanie) \\
         \hline
-        4 & 124,41 & Pakietowanie z niekorzystnymi rozmiarami paczek \\
+        4                            & 124,41            & Pakietowanie z niekorzystnymi rozmiarami paczek          \\
         \hline
-        5 & 52,24 & Pakietowanie po 15 wierszy, maksymalnie 8 zapytań naraz \\
+        5                            & 52,24             & Pakietowanie po 15 wierszy, maksymalnie 8 zapytań naraz  \\
         \hline
     \end{tabular}
     \caption{Porównanie wariantów generowania 100 wierszy AI (Ollama, RTX 5060)}
     \label{tab:llm_optimization_100}
 \end{table}
 
-Tabela~\ref{tab:llm_optimization_100} pokazuje, że sama równoległość (próba~2) bez grupowania wierszy pogarsza wynik --- serwer Ollama zostaje przeciążony i czas rośnie do 219~s. Dopiero połączenie wielu wierszy w jednym prompcie (próba~3) skraca czas do około 63~s. Próba~4 potwierdza, że rozmiar paczki ma znaczenie: przy złych ustawieniach czas wraca do poziomu wersji sekwencyjnej. Wariant docelowy (próba~5) łączy pakietowanie z umiarkowaną równoległością i daje około 52~s --- blisko 2,5-krotnie szybciej niż wersja początkowa.
+Tabela \ref{tab:llm_optimization_100} pokazuje, że sama równoległość (próba 2) bez grupowania wierszy pogarsza wynik --- serwer Ollama zostaje przeciążony i czas rośnie do 219 s. Dopiero połączenie wielu wierszy w jednym prompcie (próba 3) skraca czas do około 63 s. Próba 4 potwierdza, że rozmiar paczki ma znaczenie: przy złych ustawieniach czas wraca do poziomu wersji sekwencyjnej. Wariant docelowy (próba 5) łączy pakietowanie z umiarkowaną równoległością i daje około 52 s --- blisko 2,5-krotnie szybciej niż wersja początkowa.
+
+\subsection*{Wpływ rozmiaru paczki na czas generowania}
+Aby precyzyjnie ocenić, jak liczba wierszy łączonych w jednym zapytaniu wpływa na wydajność, przeprowadzono dodatkową serię pomiarów. Wygenerowano 100 rekordów z polem tekstowym obsługiwanym przez \gls{LLM}, zmieniając wyłącznie parametr \texttt{SUB\_BATCH\_SIZE} (1, 2, 5, 10, 20 i 100). We wszystkich próbach utrzymano \texttt{MAX\_CONCURRENT=1}, tak aby wynik zależał głównie od wielkości paczki, a nie od równoległości zapytań. Testy wykonano z wykorzystaniem chmurowego API OpenAI (zamiast lokalnej instancji Ollama), co pozwoliło sprawdzić zachowanie modelu w warunkach zbliżonych do typowego wdrożenia produkcyjnego.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \textbf{Rozmiar paczki} & \textbf{Czas [s]} & \textbf{Uwagi}                                                 \\
+        \hline
+        1                       & 90                & generowanie pojedyncze --- punkt odniesienia                   \\
+        \hline
+        2                       & 60                & widoczne przyspieszenie dzięki mniejszej liczbie zapytań       \\
+        \hline
+        5                       & 43                & dalszy spadek czasu                                            \\
+        \hline
+        10                      & 30                & najkrótszy czas --- optymalny zakres dla testowanego modelu    \\
+        \hline
+        20                      & 76                & model zwracał niepoprawną liczbę wierszy; częsty fallback      \\
+        \hline
+        100                     & 121               & jedna paczka na całą próbkę; model ,,gubił'' format odpowiedzi \\
+        \hline
+    \end{tabular}
+    \caption{Czas generowania 100 wierszy LLM przy różnych rozmiarach paczki (OpenAI API, MAX\_CONCURRENT=1)}
+    \label{tab:batch_size_comparison}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/batch_size_chart.pdf}
+    \caption{Czas generowania 100 wierszy LLM w zależności od rozmiaru paczki}
+    \label{fig:batch_size_chart}
+\end{figure}
+
+Wyniki zestawione w Tabeli \ref{tab:batch_size_comparison} i na Rysunku \ref{fig:batch_size_chart} pokazują wyraźną zależność: im więcej wierszy mieści się w jednym zapytaniu, tym krótszy jest łączny czas --- ale tylko do pewnej granicy. Przejście z paczki 1 na 10 skróciło generowanie z 90 s do 30 s, czyli około 3-krotnie. Każde kolejne zapytanie API niesie ze sobą narzut sieciowy i czas oczekiwania na odpowiedź modelu; grupowanie wierszy redukuje liczbę takich wywołań i dlatego daje realne przyspieszenie.
+
+Od paczki 20 w górę trend się odwraca. Przy zbyt dużej liczbie wierszy w jednym prompcie model zaczął zwracać tablice \gls{JSON} o niepoprawnej długości -- zamiast dokładnie $N$ elementów otrzymywano krótsze lub dłuższe odpowiedzi. Silnik wykrywa ten błąd (porównanie \texttt{len(parsed\_array)} z oczekiwaną liczbą wierszy w paczce) i uruchamia mechanizm \textit{fallback}: uszkodzona paczka jest przerabiana ponownie, tym razem po jednym wierszu na zapytanie. Przy paczce 20 i 100 fallback uruchamiał się tak często, że łączny czas wzrósł do 76 s i 121 s --- wartości gorszych niż przy mniejszych, stabilnych paczkach.
+
+Analiza wskazuje na dwa istotne wnioski. Po pierwsze, grupowanie wierszy w paczki skraca łączny czas generowania w porównaniu z wysyłaniem pojedynczych rekordów --- wariant sekwencyjny (\texttt{SUB\_BATCH\_SIZE=1}) okazał się najwolniejszy. Po drugie, zwiększanie rozmiaru paczki nie prowadzi monotonicznie do poprawy wydajności: przy zbyt dużych wartościach rośnie liczba błędów formatowania odpowiedzi, co wymusza kosztowny mechanizm \textit{fallback}. Dla testowanego modelu udostępnianego przez API OpenAI najkorzystniejszy czas uzyskano przy \texttt{SUB\_BATCH\_SIZE} równym 10; zakres 5--10 wierszy na zapytanie stanowi kompromis między liczbą wywołań API a stabilnością odpowiedzi. Wartość \texttt{SUB\_BATCH\_SIZE=15} zastosowana przy lokalnym serwerze Ollama (Tabela \ref{tab:llm_optimization_100}) została ustalona w odrębnych pomiarach --- potwierdza to, że optymalny rozmiar paczki zależy od dostawcy modelu i wymaga weryfikacji empirycznej w docelowym środowisku uruchomieniowym.
 
 \subsection*{Porównanie wydajności Faker i LLM}
 Kolejne pomiary wykonano na tym samym sprzęcie. Wykorzystano czterotabelowy schemat testowy \texttt{ecommerce\_llm\_\allowbreak schema}, w tym tabelę recenzji z polem \texttt{review\_text} generowanym przez \gls{LLM}.
