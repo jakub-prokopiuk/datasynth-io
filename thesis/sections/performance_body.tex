@@ -22,15 +22,15 @@ W celu dobrania optymalnych parametrów przeprowadzono pięć pomiarów na stał
         \hline
         \textbf{Próba optymalizacji} & \textbf{Czas [s]} & \textbf{Sposób generowania}                              \\
         \hline
-        1                            & 129,52            & Jeden wiersz na raz --- wersja początkowa                \\
+        1                            & $\sim$\,130       & Jeden wiersz na raz --- wersja początkowa                \\
         \hline
-        2                            & 218,88            & Wiele równoległych zapytań, ale nadal po jednym wierszu  \\
+        2                            & $\sim$\,219       & Wiele równoległych zapytań, ale nadal po jednym wierszu  \\
         \hline
-        3                            & 63,43             & Kilka wierszy łączonych w jedno zapytanie (pakietowanie) \\
+        3                            & $\sim$\,63        & Kilka wierszy łączonych w jedno zapytanie (pakietowanie) \\
         \hline
-        4                            & 124,41            & Pakietowanie z niekorzystnymi rozmiarami paczek          \\
+        4                            & $\sim$\,124       & Pakietowanie z niekorzystnymi rozmiarami paczek          \\
         \hline
-        5                            & 52,24             & Pakietowanie po 15 wierszy, maksymalnie 8 zapytań naraz  \\
+        5                            & $\sim$\,52        & Pakietowanie po 15 wierszy, maksymalnie 8 zapytań naraz  \\
         \hline
     \end{tabular}
     \caption{Porównanie wariantów generowania 100 wierszy AI (Ollama, RTX 5060)}
